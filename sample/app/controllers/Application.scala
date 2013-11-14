@@ -4,11 +4,9 @@ import play.api.mvc._
 import play.api.libs.json.Json._
 
 import models._
-import models.Records.RecordWrites
-
-import play.api.libs.json.{JsObject, JsValue, Writes}
 
 object Application extends Controller {
+  implicit val writes = Records.RecordWrites
 
   def index = Action { request =>
     Ok(views.html.index())

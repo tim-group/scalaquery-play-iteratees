@@ -2,6 +2,7 @@ import sbt._
 import Keys._
 
 object ScalaQueryPlayIterateesBuild extends Build {
+  val playVersion = SettingKey[String]("play-version", "The version of Play Framework used for building.")
 
   lazy val main = Project(
     id        = "main",
@@ -30,6 +31,7 @@ object ScalaQueryPlayIterateesBuild extends Build {
       case scala_2_10    => Seq("org.specs2" % "specs2_2.10" % "1.14" % "test")
     }
 
+    def play(scalaVersion: String, playVersion: String) = Seq("play" %% "play" % playVersion)
   }
 
 }

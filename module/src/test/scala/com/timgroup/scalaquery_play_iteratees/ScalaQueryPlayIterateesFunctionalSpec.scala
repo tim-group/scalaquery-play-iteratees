@@ -1,7 +1,7 @@
 package com.timgroup.scalaquery_play_iteratees
 
-import org.scalatest.path
 import org.scalatest.matchers.MustMatchers
+import org.scalatest.path
 
 class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatchers {
 

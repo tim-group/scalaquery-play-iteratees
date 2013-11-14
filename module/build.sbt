@@ -7,9 +7,16 @@ version := "0.9.0-SNAPSHOT"
 
 scalaVersion := "2.9.1"
 
-crossScalaVersions := Seq("2.9.1", "2.9.2", "2.9.3", "2.10.0", "2.10.1", "2.10.2")
+playVersion := "2.0.8"
 
-libraryDependencies ++= Seq()
+crossScalaVersions := Seq("2.9.1", "2.9.2", "2.9.3")
+
+libraryDependencies ++= Seq(
+  // Hard-code compile dependency to last pre-slick release: 0.10.0-M1 on Scala 2.9.1
+  "org.scalaquery" % "scalaquery_2.9.1" % "0.10.0-M1" intransitive()
+)
+
+libraryDependencies <++= (scalaVersion, playVersion) { CrossVersionDependencies.play(_, _) }
 
 libraryDependencies <++= scalaVersion(CrossVersionDependencies.scalatest(_))
 

@@ -1,5 +1,4 @@
 import sbt._
-import Keys._
 import PlayProject._
 
 object ApplicationBuild extends Build {
@@ -14,5 +13,6 @@ object ApplicationBuild extends Build {
   val module = RootProject(file("../module"))
 
   val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA)
+    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .dependsOn(module)
 }

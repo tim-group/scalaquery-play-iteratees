@@ -7,9 +7,9 @@ import org.scalaquery.session.Database
 import org.scalaquery.session.Database.threadLocalSession
 
 import play.api.db.DB
-import play.api.Play.current
 import play.api.libs.json.{JsObject, JsValue, Writes}
 import play.api.libs.json.Json._
+import play.api.Play.current
 
 case class Record(id: Int, name: String)
 

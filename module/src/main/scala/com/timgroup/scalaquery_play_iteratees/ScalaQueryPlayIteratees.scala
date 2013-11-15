@@ -12,33 +12,7 @@ import org.scalaquery.session.Database
 import play.api.libs.concurrent.Promise
 import play.api.libs.iteratee.Enumerator
 
-// TODO (2013-10-25, msiegel/broberts): In order of current priority
-//
-//   1. [x] Need an error handling story here, which is test-driven
-//      * Propagate Thrown side of Promises
-//      * Short circuit when encounter a Thrown
-//      * Ultimate iteratee[C].flatMap(_.run) = Thrown(ex) in that case
-//
-//   2. [x] Need consistent reads across chunks on MySQL
-//      * Take implicit or explicit session (alternate api still creates if not given and starts transaction)
-//      * Document that session must be in a transaction for consistent reads
-//      * With InnoDB, this should just work: http://dev.mysql.com/doc/refman/5.1/en/innodb-consistent-read.html
-//      * Test drive with an Enumeratee that pauses after each chunk, and test inserting, updating,
-//        and deleting rows while pipeline is paused (wire up a new MySQL data source in application.conf
-//        while inside Ideas FX, and after extracting, use the TestDB infrastructure for these tests)
-//
-//   3. [x] Need a structured logging as part of the error handling story, but
-//      in a way that can be factored out of this library into optional callbacks
-//        * [x] log, for each successful chunk fetched,
-//                -start time, end time, duration,
-//                -optional request ID
-//        * [x] log, for each failure
-//                -same fields as above
-//                -allCatch opt { query.selectStatement }.getOrElse("")
-//                -throwable
-//
-//   4. [ ] Need to extract this into a free-standing library like scalaquery_nested
-//
+
 object ScalaQueryPlayIteratees {
 
   /** Default chunk size for queries */

@@ -10,6 +10,7 @@ import play.api.db.DB
 import play.api.libs.json.{JsObject, JsValue, Writes}
 import play.api.libs.json.Json._
 import play.api.Play.current
+import com.timgroup.scalaquery_play_iteratees.ScalaQueryPlayIteratees.enumerateScalaQuery
 
 case class Record(id: Int, name: String)
 
@@ -27,6 +28,7 @@ class Records extends Table[Record]("records") {
 
   def count = database withSession { Query(mkQuery.count).first }
   def all = database withSession { mkQuery.list }
+  def enumerateAllInChunksOfTwo = enumerateScalaQuery(profile, Right(database), mkQuery, maybeChunkSize = Some(2))
 
   def ensureDbPopulated() {
     if (count == 0) {

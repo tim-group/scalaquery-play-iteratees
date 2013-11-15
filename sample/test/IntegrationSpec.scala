@@ -12,8 +12,8 @@ class IntegrationSpec extends Specification {
     "return all records, which were enumerated in chunks" in {
       running(TestServer(3333), HTMLUNIT) { browser =>
 
-        // verify that ajax loaded correctly, which queried db in chunks
-        browser.goTo("http://localhost:3333/list.json")
+        // verify that comet handler received records in chunks
+        browser.goTo("http://localhost:3333/")
         browser.pageSource must contain("""{"id":1,"name":"Alpha"}""")
         browser.pageSource must contain("""{"id":2,"name":"Beta"}""")
         browser.pageSource must contain("""{"id":3,"name":"Gamma"}""")

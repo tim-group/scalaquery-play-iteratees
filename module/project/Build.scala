@@ -31,7 +31,7 @@ object ScalaQueryPlayIterateesBuild extends Build {
       case scala_2_10    => Seq("org.specs2" % "specs2_2.10" % "1.14" % "test")
     }
 
-    def play(scalaVersion: String, playVersion: String) = Seq("play" %% "play" % playVersion)
+    def play(scalaVersion: String, playVersion: String) = Seq("play" % ("play_" + scalaVersion) % playVersion)
   }
 
 }

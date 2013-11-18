@@ -8,7 +8,6 @@ import play.api.libs.Comet
 
 import models._
 
-
 object Application extends Controller {
   implicit val recordsWrites = listWrites(Records.RecordWrites)
 

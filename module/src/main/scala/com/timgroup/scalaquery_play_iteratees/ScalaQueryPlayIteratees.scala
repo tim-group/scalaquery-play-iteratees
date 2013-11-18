@@ -19,15 +19,16 @@ object ScalaQueryPlayIteratees {
   val DefaultQueryChunkSize: Int = 100
 
   /** Fields passed to callback after each query execution */
-  case class LogFields(
-                        startTime: DateTime,
-                        endTime: DateTime,
-                        // provide sql select statement, unless generating it throws an exception
-                        maybeSqlStmt: Option[String],
-                        // [failure only] provide any exception thrown
-                        maybeException: Option[Throwable])
+  case class LogFields(startTime: DateTime,
+                       endTime: DateTime,
+                       maybeSqlStmt: Option[String],      // sql select statement unless generation throws exception
+                       maybeException: Option[Throwable]) // [failure cases only] thrown exception
 
+  /** A LogCallback is defined as an effect taking LogFields as input */
   type LogCallback = LogFields => Unit
+
+  /** Default LogCallback is to do nothing */
+  val DefaultLogCallback: LogCallback = LogFields => ()
 
   /**
    * Returns a Play Enumerator which fetches the results of the given ScalaQuery Query in chunks.
@@ -41,7 +42,7 @@ object ScalaQueryPlayIteratees {
                                    sessionOrDatabase: Either[SessionWithAsyncTransaction, Database],
                                    query: Query[Q, R],
                                    maybeChunkSize: Option[Int] = Some(DefaultQueryChunkSize),
-                                   logCallback: LogCallback = LogFields => ()): Enumerator[List[R]] = {
+                                   logCallback: LogCallback = DefaultLogCallback): Enumerator[List[R]] = {
     maybeChunkSize.filter(_ <= 0).foreach { _ => throw new IllegalArgumentException("chunkSize must be >= 1") }
 
     val session = sessionOrDatabase.fold(session => session, db => new SessionWithAsyncTransaction(db))

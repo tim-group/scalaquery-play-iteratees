@@ -4,7 +4,6 @@ import scala.util.control.Exception.allCatch
 import scala.util.Random
 
 import akka.dispatch.Future
-
 import org.h2.jdbc.JdbcSQLException
 import org.scalaquery.ql._
 import org.scalaquery.ql.ColumnOps._
@@ -14,16 +13,13 @@ import org.scalaquery.session.{Session, Database, SessionWithAsyncTransaction}
 import org.scalaquery.session.Database.threadLocalSession
 import org.scalaquery.test.util.TestDB
 import org.scalaquery.util.NamingContext
-
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.OptionValues._
 import org.scalatest.matchers.MustMatchers
 import org.scalatest.path
-
 import play.api.libs.iteratee.{Error, Input, Enumeratee, Iteratee}
 
 import ScalaQueryPlayIteratees.{LogFields, LogCallback, enumerateScalaQuery}
-
 
 class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatchers {
   // Create in-memory test DB and import its implicits

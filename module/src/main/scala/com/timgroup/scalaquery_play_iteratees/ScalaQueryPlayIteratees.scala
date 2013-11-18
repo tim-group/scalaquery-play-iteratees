@@ -12,7 +12,6 @@ import org.scalaquery.session.Database
 import play.api.libs.concurrent.Promise
 import play.api.libs.iteratee.Enumerator
 
-
 object ScalaQueryPlayIteratees {
 
   /** Default chunk size for queries */

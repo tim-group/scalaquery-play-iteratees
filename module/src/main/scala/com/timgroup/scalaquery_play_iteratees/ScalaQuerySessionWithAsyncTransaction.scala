@@ -1,6 +1,5 @@
 package org.scalaquery.session
 
-
 /**
  * Reimplementation of the transaction semantics of ScalaQuery's BaseSession#withTransaction,
  * but in an API which can be driven from multiple asynchronous callbacks rather than only a

@@ -1,6 +1,6 @@
 package models
 
-import org.scalaquery.ql.extended.{ExtendedTable => Table, ExtendedProfile, H2Driver}
+import org.scalaquery.ql.extended.{ExtendedTable => Table, H2Driver}
 import org.scalaquery.ql.Query
 import org.scalaquery.ql.TypeMapper._
 import org.scalaquery.session.Database
@@ -16,7 +16,7 @@ case class Record(id: Int, name: String)
 
 class Records extends Table[Record]("records") {
   def database = Database.forDataSource(DB.getDataSource("default"))
-  lazy val profile: ExtendedProfile = H2Driver
+  lazy val profile = H2Driver
   import profile.Implicit._
 
   // mapped columns

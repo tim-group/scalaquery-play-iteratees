@@ -10,7 +10,7 @@ query!
  *  Use any `Query` as an `Enumerator` which plugs right in to Play 2.0.x
     [Comet](http://www.playframework.com/documentation/2.0.x/ScalaComet) support or
     other asynchronous processing
- *  Underlying database transaction provides read consistency across async chunksed reads
+ *  Underlying database transaction provides read consistency across async chunked reads
  *  Easy logging callbacks 
  *  Robust error handling
  *  Well-tested library extracted from production code

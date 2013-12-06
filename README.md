@@ -14,3 +14,45 @@ query!
  *  Easy logging callbacks 
  *  Robust error handling
  *  Well-tested library extracted from production code
+
+Usage
+-----
+
+```scala
+//
+// Controller
+//
+def listRecordsViaComet = Action { request =>
+  val pipeline = (
+    Records.enumerateAllInChunksOfTwo
+      &> Enumeratee.map(toJson(_))
+      &> Comet(callback = "parent.cometMessage"))
+
+  Ok.stream(pipeline)
+}
+
+//
+// Model
+//
+class Records extends Table[Record]("records") {
+  def enumerateAllInChunksOfTwo = 
+    enumerateScalaQuery(profile, Right(database), mkQuery, maybeChunkSize = Some(2))
+}
+```
+
+See the included [sample play app](sample) for a working example.
+
+Status
+------
+
+This code is working in production code based on Play 2.0.8, ScalaQuery 0.10.0-M1, on Scala 2.9.2. 
+
+TODO
+----
+
+Create a branch to begin to port to latest versions of Play, SLICK, and Scala.
+
+Copyright
+---------
+
+See [MIT-LICENSE.txt](MIT-LICENSE.txt) for details.

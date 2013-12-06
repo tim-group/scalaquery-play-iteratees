@@ -42,6 +42,8 @@ class Records extends Table[Record]("records") {
 
 See the included [sample play app](sample) for a working example.
 
+To depend on the latest published jar, simple add the following dependency in **project/Build.scala**: `"com.timgroup" %% "scalaquery-play-iteratees" % "0.9.0"`
+
 Status
 ------
 

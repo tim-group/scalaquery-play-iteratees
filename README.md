@@ -35,6 +35,8 @@ def listRecordsViaComet = Action { request =>
 // Model
 //
 class Records extends Table[Record]("records") {
+  def mkQuery = for { r <- this } yield r
+  
   def enumerateAllInChunksOfTwo = 
     enumerateScalaQuery(profile, Right(database), mkQuery, maybeChunkSize = Some(2))
 }

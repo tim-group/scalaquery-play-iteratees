@@ -11,6 +11,7 @@ import org.scalaquery.session.Database
 
 import play.api.libs.concurrent.Promise
 import play.api.libs.iteratee.Enumerator
+import play.api.LoggerLike
 
 object ScalaQueryPlayIteratees {
 
@@ -26,8 +27,27 @@ object ScalaQueryPlayIteratees {
   /** A LogCallback is defined as an effect taking LogFields as input */
   type LogCallback = LogFields => Unit
 
-  /** Default LogCallback is to do nothing */
-  val DefaultLogCallback: LogCallback = LogFields => ()
+  /** Default LogCallback does nothing */
+  val EmptyLogCallback: LogCallback = LogFields => ()
+
+  /** Create a LogCallback which logs to a Play framework Logger.
+    * @param logger                the Play Framework logger
+    * @param shouldLogSqlOnSuccess change this to `true` to log SQL statements on success as well
+    */
+  def PlayLogCallback(logger: LoggerLike, shouldLogSqlOnSuccess: Boolean = false): LogCallback = { fields: LogFields =>
+    val durationMs = fields.endTime.getMillis - fields.startTime.getMillis
+    val shouldLogSql = fields.maybeException.isDefined || shouldLogSqlOnSuccess
+
+    val message = "enumerateScalaQuery - %s chunk in %d ms%s".format(
+      if (fields.maybeException.isEmpty) "fetched" else "failed to fetch",
+      durationMs,
+      fields.maybeSqlStmt.filter(_ => shouldLogSql).map(s => " [" + s + "]").getOrElse(""))
+
+    fields.maybeException match {
+      case None     => logger.info(message)
+      case Some(ex) => logger.error(message, ex)
+    }
+  }
 
   /**
    * Returns a Play Enumerator which fetches the results of the given ScalaQuery Query in chunks.
@@ -41,7 +61,7 @@ object ScalaQueryPlayIteratees {
                                    sessionOrDatabase: Either[SessionWithAsyncTransaction, Database],
                                    query: Query[Q, R],
                                    maybeChunkSize: Option[Int] = Some(DefaultQueryChunkSize),
-                                   logCallback: LogCallback = DefaultLogCallback): Enumerator[List[R]] = {
+                                   logCallback: LogCallback = EmptyLogCallback): Enumerator[List[R]] = {
     maybeChunkSize.filter(_ <= 0).foreach { _ => throw new IllegalArgumentException("chunkSize must be >= 1") }
 
     val session = sessionOrDatabase.fold(session => session, db => new SessionWithAsyncTransaction(db))

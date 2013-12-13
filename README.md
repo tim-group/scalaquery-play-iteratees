@@ -44,7 +44,12 @@ class Records extends Table[Record]("records") {
 
 See the included [sample play app](sample) for a working example.
 
-To depend on the latest published jar, simple add the following dependency in **project/Build.scala**: `"com.timgroup" %% "scalaquery-play-iteratees" % "0.9.0"`
+Adding SBT Dependency
+------------------------------
+
+##### Scala 2.9.x + Play 2.0.x + ScalaQuery 0.10.0-M1: #####
+
+The latest published release is **[0.9.1](http://oss.sonatype.org/content/repositories/releases/com/timgroup/scalaquery-play-iteratees_2.9.1/0.9.1/)**. Add dependency to **project/Build.scala** as: `"com.timgroup" %% "scalaquery-play-iteratees" % "0.9.1"`
 
 Status
 ------

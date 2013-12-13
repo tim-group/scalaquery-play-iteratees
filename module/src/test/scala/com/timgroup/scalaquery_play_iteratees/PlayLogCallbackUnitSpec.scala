@@ -13,9 +13,9 @@ import ScalaQueryPlayIteratees.{LogFields, PlayLogCallback}
 class PlayLogCallbackUnitSpec extends path.FunSpec with MustMatchers with MockitoSugar {
   val startTime = new DateTime(2013, 11, 19, 17, 8, 3, DateTimeZone.forID("America/New_York"))
   val endTime = startTime.plusMillis(500)
-  val fieldsOnSuccess = LogFields(startTime, endTime, Some("sql"), None)
+  val fieldsOnSuccess = LogFields(startTime, endTime, 0, Some(100), Some("sql"), None)
   val exception = new RuntimeException("boo!")
-  val fieldsOnException = LogFields(startTime, endTime, Some("sql"), Some(exception))
+  val fieldsOnException = fieldsOnSuccess.copy(maybeNumResults = None, maybeException = Some(exception))
 
   val slf4jLogger = mock[Slf4jLogger]
   when(slf4jLogger.isInfoEnabled).thenReturn(true)
@@ -28,18 +28,26 @@ class PlayLogCallbackUnitSpec extends path.FunSpec with MustMatchers with Mockit
   describe("PlayLogCallback") {
 
     describe("on success with default settings") {
-      callback(fieldsOnSuccess)
-
       it("logs at info level without SQL") {
-        verify(slf4jLogger).info("enumerateScalaQuery - fetched chunk in 500 ms")
+        callback(fieldsOnSuccess)
+        verify(slf4jLogger).info("enumerateScalaQuery - fetched chunk in 500 ms: offset 0, 100 records")
+      }
+
+      it("logs zero records returned") {
+        callback(fieldsOnSuccess.copy(maybeNumResults = None))
+        verify(slf4jLogger).info("enumerateScalaQuery - fetched chunk in 500 ms: offset 0, 0 records")
       }
     }
 
     describe("on success with settings: should log SQL on success") {
-      callbackLogSql(fieldsOnSuccess)
-
       it("logs at info level *with* SQL") {
-        verify(slf4jLogger).info("enumerateScalaQuery - fetched chunk in 500 ms [sql]")
+        callbackLogSql(fieldsOnSuccess)
+        verify(slf4jLogger).info("enumerateScalaQuery - fetched chunk in 500 ms: offset 0, 100 records [sql]")
+      }
+
+      it("logs zero records returned") {
+        callbackLogSql(fieldsOnSuccess.copy(maybeNumResults = None))
+        verify(slf4jLogger).info("enumerateScalaQuery - fetched chunk in 500 ms: offset 0, 0 records [sql]")
       }
     }
 
@@ -47,7 +55,7 @@ class PlayLogCallbackUnitSpec extends path.FunSpec with MustMatchers with Mockit
       callback(fieldsOnException)
 
       it("logs at error level with SQL") {
-        verify(slf4jLogger).error("enumerateScalaQuery - failed to fetch chunk in 500 ms [sql]", exception)
+        verify(slf4jLogger).error("enumerateScalaQuery - failed to fetch chunk in 500 ms: offset 0 [sql]", exception)
       }
     }
 
@@ -55,7 +63,7 @@ class PlayLogCallbackUnitSpec extends path.FunSpec with MustMatchers with Mockit
       callbackLogSql(fieldsOnException)
 
       it("logs at error level with SQL") {
-        verify(slf4jLogger).error("enumerateScalaQuery - failed to fetch chunk in 500 ms [sql]", exception)
+        verify(slf4jLogger).error("enumerateScalaQuery - failed to fetch chunk in 500 ms: offset 0 [sql]", exception)
       }
     }
 

@@ -21,6 +21,8 @@ object ScalaQueryPlayIteratees {
   /** Fields passed to callback after each query execution */
   case class LogFields(startTime: DateTime,
                        endTime: DateTime,
+                       offset: Int,
+                       maybeNumResults: Option[Int],      // [success cases only] number of results in chunk
                        maybeSqlStmt: Option[String],      // sql select statement unless generation throws exception
                        maybeException: Option[Throwable]) // [failure cases only] thrown exception
 
@@ -38,9 +40,14 @@ object ScalaQueryPlayIteratees {
     val durationMs = fields.endTime.getMillis - fields.startTime.getMillis
     val shouldLogSql = fields.maybeException.isDefined || shouldLogSqlOnSuccess
 
-    val message = "enumerateScalaQuery - %s chunk in %d ms%s".format(
+    // Log zero results in the success case where no more results available
+    val maybeNumResults = fields.maybeNumResults.orElse(Some(0).filter(_ => fields.maybeException.isEmpty))
+
+    val message = "enumerateScalaQuery - %s chunk in %d ms: offset %d%s%s".format(
       if (fields.maybeException.isEmpty) "fetched" else "failed to fetch",
       durationMs,
+      fields.offset,
+      maybeNumResults.map(n => ", %d records".format(n)).getOrElse(""),
       fields.maybeSqlStmt.filter(_ => shouldLogSql).map(s => " [" + s + "]").getOrElse(""))
 
     fields.maybeException match {
@@ -98,19 +105,30 @@ object ScalaQueryPlayIteratees {
     /** Returns a Promise containing None when no more results are available */
     def fetchNextChunk: Promise[Option[List[R]]] = {
       val startTime = DateTime.now
+      val startPosition = position // capture this, since position will changed when we execute
 
       // the only places errors might occur: sql generation, and fetching from db
       val queryAndSqlOrError = chunkQueryAndGenerateSql
       val promiseOrError = queryAndSqlOrError.right.flatMap { queryAndSql => executeQuery(queryAndSql._1) }
 
-      // log what happened
+      // log what happened (log an error immediately, log success by chaining onto the Promise)
       val endTime = DateTime.now
       val maybeSqlStatement = queryAndSqlOrError.right.toOption.flatMap(_._2)
-      val maybeException = promiseOrError.left.toOption
-      logCallback(LogFields(startTime, endTime, maybeSqlStatement, maybeException))
 
-      // rethrow any exception, or return results
-      promiseOrError.fold(e => throw e, p => p)
+      promiseOrError.left.foreach { ex =>
+        logCallback(LogFields(startTime, endTime, startPosition, None, maybeSqlStatement, Some(ex)))
+      }
+
+      val promiseWithLoggingOrError = promiseOrError.right.map { p =>
+        p.onRedeem { maybeResults =>
+          val maybeNumResults = maybeResults.map(_.length)
+          logCallback(LogFields(startTime, endTime, startPosition, maybeNumResults, maybeSqlStatement, None))
+        }
+        p
+      }
+
+      // rethrow any exception, or return results with async logging
+      promiseWithLoggingOrError.fold(e => throw e, p => p)
     }
 
     /** First place that an exception might occur: chunking the query, and generating the sql for logging */

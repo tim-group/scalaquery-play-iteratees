@@ -8,9 +8,10 @@ import org.scalaquery.session.Database.threadLocalSession
 import play.api.db.DB
 import play.api.libs.json.{JsObject, JsValue, Writes}
 import play.api.libs.json.Json._
+import play.api.Logger
 import play.api.Play.current
 
-import com.timgroup.scalaquery_play_iteratees.ScalaQueryPlayIteratees.enumerateScalaQuery
+import com.timgroup.scalaquery_play_iteratees.ScalaQueryPlayIteratees.{enumerateScalaQuery, PlayLogCallback}
 
 case class Record(id: Int, name: String)
 
@@ -31,7 +32,8 @@ class Records extends Table[Record]("records") {
   def all = database withSession { mkQuery.list }
 
   /** This is it: enumerate the query for all Records in chunks of 2 */
-  def enumerateAllInChunksOfTwo = enumerateScalaQuery(profile, Right(database), mkQuery, maybeChunkSize = Some(2))
+  def enumerateAllInChunksOfTwo = enumerateScalaQuery(profile, Right(database), mkQuery, maybeChunkSize = Some(2),
+    logCallback = PlayLogCallback(Logger))
 
   def ensureDbPopulated() {
     if (count == 0) {

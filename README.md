@@ -8,12 +8,11 @@ Go to the [0.9.x](https://github.com/youdevise/scalaquery-play-iteratees/tree/0.
 
 Summary
 -------
-Easily create a Play 2.0.x [Enumerator](http://www.playframework.com/documentation/2.0.x/Enumerators)
-producing chunked results from any [ScalaQuery 0.10.0-M1](https://github.com/slick/slick/tree/0.10.0-M1)
-query!
+Easily create a Play 2.2.x [Enumerator](http://www.playframework.com/documentation/2.2.x/Enumerators)
+producing chunked results from any [Slick 1.0.x](https://github.com/slick/slick/tree/1.0) query!
  *  Stream chunked results from any `Query` as an `Enumerator`! 
- *  Easily plug into Play 2.0.x streaming, such as
-    [Comet](http://www.playframework.com/documentation/2.0.x/ScalaComet)
+ *  Easily plug into Play 2.2.x streaming, such as
+    [Comet](http://www.playframework.com/documentation/2.2.x/ScalaComet)
  *  Underlying database transaction provides read consistency across async chunked reads
  *  Easy logging callbacks 
  *  Robust error handling
@@ -59,11 +58,6 @@ Status
 ------
 
 This code is working in production code based on Play 2.0.8, ScalaQuery 0.10.0-M1, on Scala 2.9.2. 
-
-TODO
-----
-
-Create a branch to begin to port to latest versions of Play, SLICK, and Scala.
 
 Copyright
 ---------

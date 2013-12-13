@@ -2,6 +2,10 @@ ScalaQueryPlayIteratees
 =======================
 [![Build Status](https://travis-ci.org/youdevise/scalaquery-play-iteratees.png)](https://travis-ci.org/youdevise/scalaquery-play-iteratees)
 
+**NOTE**: This is branch **0.9.x**, for use with Play 2.0.x and ScalaQuery 0.10.0-M1 on Scala language 2.9.x.
+
+Go to the [master](https://github.com/youdevise/scalaquery-play-iteratees/tree/master) branch for use with Play 2.2.x and Slick on Scala language 2.10.x.
+
 Summary
 -------
 Easily create a Play 2.0.x [Enumerator](http://www.playframework.com/documentation/2.0.x/Enumerators)
@@ -56,10 +60,6 @@ Status
 
 This code is working in production code based on Play 2.0.8, ScalaQuery 0.10.0-M1, on Scala 2.9.2. 
 
-TODO
-----
-
-Create a branch to begin to port to latest versions of Play, SLICK, and Scala.
 
 Copyright
 ---------

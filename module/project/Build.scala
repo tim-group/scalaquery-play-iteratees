@@ -24,7 +24,7 @@ object ScalaQueryPlayIterateesBuild extends Build {
 
     def scalatest(scalaVersion: String) = scalaVersion match {
       case scala_2_9()  => Seq("org.scalatest" %% "scalatest" % "1.9.2" % "test")
-      case scala_2_10() => Seq("org.scalatest" % "scalatest_2.10" % "1.9.2" % "test")
+      case scala_2_10() => Seq("org.scalatest" %% "scalatest" % "2.0" % "test")
     }
 
     def specs2(scalaVersion: String) = scalaVersion match {

@@ -17,47 +17,47 @@ import play.api.LoggerLike
 
 object ScalaQueryPlayIteratees {
 
-//  /** Default chunk size for queries */
-//  val DefaultQueryChunkSize: Int = 100
-//
-//  /** Fields passed to callback after each query execution */
-//  case class LogFields(startTime: DateTime,
-//                       endTime: DateTime,
-//                       offset: Int,
-//                       maybeNumResults: Option[Int],      // [success cases only] number of results in chunk
-//                       maybeSqlStmt: Option[String],      // sql select statement unless generation throws exception
-//                       maybeException: Option[Throwable]) // [failure cases only] thrown exception
-//
-//  /** A LogCallback is defined as an effect taking LogFields as input */
-//  type LogCallback = LogFields => Unit
-//
-//  /** Default LogCallback does nothing */
-//  val EmptyLogCallback: LogCallback = LogFields => ()
-//
-//  /** Create a LogCallback which logs to a Play framework Logger.
-//    * @param logger                the Play Framework logger
-//    * @param shouldLogSqlOnSuccess change this to `true` to log SQL statements on success as well
-//    */
-//  def PlayLogCallback(logger: LoggerLike, shouldLogSqlOnSuccess: Boolean = false): LogCallback = { fields: LogFields =>
-//    val durationMs = fields.endTime.getMillis - fields.startTime.getMillis
-//    val shouldLogSql = fields.maybeException.isDefined || shouldLogSqlOnSuccess
-//
-//    // Log zero results in the success case where no more results available
-//    val maybeNumResults = fields.maybeNumResults.orElse(Some(0).filter(_ => fields.maybeException.isEmpty))
-//
-//    val message = "enumerateScalaQuery - %s chunk in %d ms: offset %d%s%s".format(
-//      if (fields.maybeException.isEmpty) "fetched" else "failed to fetch",
-//      durationMs,
-//      fields.offset,
-//      maybeNumResults.map(n => ", %d records".format(n)).getOrElse(""),
-//      fields.maybeSqlStmt.filter(_ => shouldLogSql).map(s => " [" + s + "]").getOrElse(""))
-//
-//    fields.maybeException match {
-//      case None     => logger.info(message)
-//      case Some(ex) => logger.error(message, ex)
-//    }
-//  }
-//
+  /** Default chunk size for queries */
+  val DefaultQueryChunkSize: Int = 100
+
+  /** Fields passed to callback after each query execution */
+  case class LogFields(startTime: DateTime,
+                       endTime: DateTime,
+                       offset: Int,
+                       maybeNumResults: Option[Int],      // [success cases only] number of results in chunk
+                       maybeSqlStmt: Option[String],      // sql select statement unless generation throws exception
+                       maybeException: Option[Throwable]) // [failure cases only] thrown exception
+
+  /** A LogCallback is defined as an effect taking LogFields as input */
+  type LogCallback = LogFields => Unit
+
+  /** Default LogCallback does nothing */
+  val EmptyLogCallback: LogCallback = LogFields => ()
+
+  /** Create a LogCallback which logs to a Play framework Logger.
+    * @param logger                the Play Framework logger
+    * @param shouldLogSqlOnSuccess change this to `true` to log SQL statements on success as well
+    */
+  def PlayLogCallback(logger: LoggerLike, shouldLogSqlOnSuccess: Boolean = false): LogCallback = { fields: LogFields =>
+    val durationMs = fields.endTime.getMillis - fields.startTime.getMillis
+    val shouldLogSql = fields.maybeException.isDefined || shouldLogSqlOnSuccess
+
+    // Log zero results in the success case where no more results available
+    val maybeNumResults = fields.maybeNumResults.orElse(Some(0).filter(_ => fields.maybeException.isEmpty))
+
+    val message = "enumerateScalaQuery - %s chunk in %d ms: offset %d%s%s".format(
+      if (fields.maybeException.isEmpty) "fetched" else "failed to fetch",
+      durationMs,
+      fields.offset,
+      maybeNumResults.map(n => ", %d records".format(n)).getOrElse(""),
+      fields.maybeSqlStmt.filter(_ => shouldLogSql).map(s => " [" + s + "]").getOrElse(""))
+
+    fields.maybeException match {
+      case None     => logger.info(message)
+      case Some(ex) => logger.error(message, ex)
+    }
+  }
+
 //  /**
 //   * Returns a Play Enumerator which fetches the results of the given ScalaQuery Query in chunks.
 //   *

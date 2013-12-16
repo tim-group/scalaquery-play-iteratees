@@ -19,6 +19,8 @@ object ScalaQueryPlayIterateesBuild extends Build {
     val scala_2_9_0 = """2\.9\.0.*""".r
     val scala_2_9   = """2\.9.*""".r
     val scala_2_10  = """2\.10.*""".r
+    val play_2_1    = """2\.1.*""".r
+    val play_2_2    = """2\.2.*""".r
 
     def scalatest(scalaVersion: String) = scalaVersion match {
       case scala_2_9()  => Seq("org.scalatest" %% "scalatest" % "1.9.2" % "test")
@@ -28,10 +30,16 @@ object ScalaQueryPlayIterateesBuild extends Build {
     def specs2(scalaVersion: String) = scalaVersion match {
       case scala_2_9_0() => Seq("org.specs2" %% "specs2" % "1.7.1" % "test")
       case scala_2_9()   => Seq("org.specs2" %% "specs2" % "1.12.3" % "test")
-      case scala_2_10    => Seq("org.specs2" % "specs2_2.10" % "1.14" % "test")
+      case scala_2_10()  => Seq("org.specs2" % "specs2_2.10" % "1.14" % "test")
     }
 
-    def play(scalaVersion: String, playVersion: String) = Seq("play" % ("play_" + scalaVersion) % playVersion)
+    def play(scalaVersion: String, playVersion: String) = (scalaVersion, playVersion) match {
+      case (scala_2_9(),  _)          => Seq("play" % ("play_" + scalaVersion) % playVersion intransitive())
+      case (scala_2_10(), play_2_1()) => Seq("play" % "play_2.10" % playVersion intransitive())
+      case (scala_2_10(), play_2_2()) => Seq(
+        "com.typesafe.play" %% "play" % playVersion intransitive(),
+        "com.typesafe.play" %% "play-iteratees" % playVersion intransitive())
+    }
   }
 
 }

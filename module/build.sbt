@@ -3,19 +3,22 @@ name := "scalaquery-play-iteratees"
 organization := "com.timgroup"
 
 // Change to non-SNAPSHOT version to publish a release
-version := "0.9.2-SNAPSHOT"
+version := "1.0.0-SNAPSHOT"
 
-scalaVersion := "2.9.1"
+scalaVersion := "2.10.3"
 
-playVersion := "2.0.8"
+playVersion := "2.2.1"
 
-crossScalaVersions := Seq("2.9.1", "2.9.2", "2.9.3")
+crossScalaVersions := Seq("2.10.3")
 
 resolvers += "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= Seq(
-  // Hard-code compile dependency to last pre-slick release: 0.10.0-M1 on Scala 2.9.1
-  "org.scalaquery" % "scalaquery_2.9.1" % "0.10.0-M1" intransitive(),
+  "com.typesafe.slick" %% "slick" % "1.0.1" intransitive(),
+  "com.typesafe.play" %% "play-slick" % "0.5.0.8" intransitive(),
+  "joda-time" % "joda-time" % "2.3" intransitive(),
+  "org.joda" % "joda-convert" % "1.5" intransitive(),
+  "org.slf4j" % "slf4j-api" % "[1.6.6]" force(),
   // Test-only dependencies
   "org.mockito" % "mockito-core" % "1.9.0" % "test"
 )

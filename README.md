@@ -26,12 +26,11 @@ Usage
 // Controller
 //
 def listRecordsViaComet = Action { request =>
-  val pipeline = (
-    Records.enumerateAllInChunksOfTwo
-      &> Enumeratee.map(toJson(_))
-      &> Comet(callback = "parent.cometMessage"))
+  val pipeline = Records.enumerateAllInChunksOfTwo &>
+    Enumeratee.map(toJson(_)) &>
+    Comet(callback = "parent.cometMessage")
 
-  Ok.stream(pipeline)
+  Ok.chunked(pipeline)
 }
 
 //
@@ -48,11 +47,16 @@ class Records extends Table[Record]("records") {
 See the included [sample play app](sample) for a working example.
 
 Adding SBT Dependency
-------------------------------
+---------------------
+
+##### Scala 2.10.x + Play 2.2.x + Slick 1.0.1: #####
+
+The latest published release is **[1.0.0](http://oss.sonatype.org/content/repositories/releases/com/timgroup/scalaquery-play-iteratees_2.10/1.0.0/)**. Add dependency to **project/Build.scala** as: `"com.timgroup" %% "scalaquery-play-iteratees" % "1.0.0"`
+
 
 ##### Scala 2.9.x + Play 2.0.x + ScalaQuery 0.10.0-M1: #####
 
-The latest published release is **[0.9.1](http://oss.sonatype.org/content/repositories/releases/com/timgroup/scalaquery-play-iteratees_2.9.1/0.9.1/)**. Add dependency to **project/Build.scala** as: `"com.timgroup" %% "scalaquery-play-iteratees" % "0.9.1"`
+Please see branch [0.9.x](https://github.com/youdevise/scalaquery-play-iteratees/tree/0.9.x).
 
 Status
 ------

@@ -127,6 +127,15 @@ object ScalaQueryPlayIteratees {
       futureResults
     }
 
+    /**
+     * When done, must call this to ensure that connection is committed, releasing any
+     * underlying read locks or other mechanisms used by the database to ensure read
+     * consistency across multiple statements in a single transaction.
+     */
+    def completeTransaction() {
+      session.ensureAsyncTransactionIsCompleted()
+    }
+
     /** First place that an exception might occur: chunking the query */
     private def chunkQuery(query: Query[Q, R]): Future[Option[Query[Q, R]]] = Future {
       (maybeChunkSize, position) match {
@@ -155,14 +164,6 @@ object ScalaQueryPlayIteratees {
       Some(results).filterNot(_.isEmpty) // return Future.successful(None) if no results
     }
 
-    /**
-     * When done, must call this to ensure that connection is committed, releasing any
-     * underlying read locks or other mechanisms used by the database to ensure read
-     * consistency across multiple statements in a single transaction.
-     */
-    def completeTransaction() {
-      session.ensureAsyncTransactionIsCompleted()
-    }
   }
 
 }

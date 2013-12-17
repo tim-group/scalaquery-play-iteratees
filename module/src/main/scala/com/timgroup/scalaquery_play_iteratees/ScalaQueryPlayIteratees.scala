@@ -104,42 +104,44 @@ object ScalaQueryPlayIteratees {
       val startTime = DateTime.now
       val startPosition = position // capture this, since position will changed when we execute
 
-      // the only places errors might occur: sql generation, and then fetching from db
-      val queryAndSqlOrError = chunkQueryAndGenerateSql
-      val promiseOrError = queryAndSqlOrError.flatMap { queryAndSql => executeQuery(queryAndSql._1) }
+      // the only places errors might occur: chunking query, generating sql, and executing query
+      val futureMaybeChunkedQuery = chunkQuery(query)
+      val futureMaybeSql          = futureMaybeChunkedQuery.flatMap(generateSql)
+      val futureResults           = futureMaybeChunkedQuery.flatMap(executeQuery)
 
       // Log any error with sql statement (unless that's where the error occurred)
       for {
-        ex                <- promiseOrError.failed
-        maybeSqlStatement <- queryAndSqlOrError.map(_._2).recover { case _ => None }
-        endTime           =  DateTime.now
-      } logCallback(LogFields(startTime, endTime, startPosition, None, maybeSqlStatement, Some(ex)))
+        ex       <- futureResults.failed
+        maybeSql <- futureMaybeSql.recover { case _ => None }
+        endTime  =  DateTime.now
+      } logCallback(LogFields(startTime, endTime, startPosition, None, maybeSql, Some(ex)))
 
       // Or, log success
       for {
-        maybeSqlStatement <- queryAndSqlOrError.map(_._2)
-        maybeResults      <- promiseOrError
-        maybeNumResults   =  maybeResults.map(_.length)
-        endTime           =  DateTime.now
-      } logCallback(LogFields(startTime, endTime, startPosition, maybeNumResults, maybeSqlStatement, None))
+        maybeResults    <- futureResults
+        maybeSql        <- futureMaybeSql
+        maybeNumResults =  maybeResults.map(_.length)
+        endTime         =  DateTime.now
+      } logCallback(LogFields(startTime, endTime, startPosition, maybeNumResults, maybeSql, None))
 
-      promiseOrError
+      futureResults
     }
 
-    /** First place that an exception might occur: chunking the query, and generating the sql for logging */
-    private def chunkQueryAndGenerateSql: Future[(Option[Query[Q, R]], Option[String])] = Future {
-      val maybeQueryWithChunking = (maybeChunkSize, position) match {
+    /** First place that an exception might occur: chunking the query */
+    private def chunkQuery(query: Query[Q, R]): Future[Option[Query[Q, R]]] = Future {
+      (maybeChunkSize, position) match {
         case (Some(chunkSize), _) => Some(query.drop(position).take(chunkSize))
         case (None, 0)            => Some(query)
         case _                    => None
       }
-
-      val maybeSqlStatement = maybeQueryWithChunking.map(_.selectStatement)
-
-      (maybeQueryWithChunking, maybeSqlStatement)
     }
 
-    /** Second place that an exception might occur: executing the query */
+    /** Second place that an exception might occur: generating the sql (for logging) */
+    private def generateSql(maybeQueryWithChunking: Option[Query[Q, R]]): Future[Option[String]] = Future {
+      maybeQueryWithChunking.map(_.selectStatement)
+    }
+
+    /** Third place that an exception might occur: executing the query */
     private def executeQuery(maybeQueryWithChunking: Option[Query[Q, R]]) = Future {
       val results: List[R] = session.withAsyncTransaction { implicit sessionWithTransaction =>
         maybeQueryWithChunking match {

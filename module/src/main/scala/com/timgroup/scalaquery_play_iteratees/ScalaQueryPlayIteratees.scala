@@ -53,14 +53,13 @@ object ScalaQueryPlayIteratees {
     }
   }
 
-  /**
-   * Returns a Play Enumerator which fetches the results of the given ScalaQuery Query in chunks.
-   *
-   * @param sessionOrDatabase   Provide either a session (useful for consistent reads across a
-   *                            larger transaction), or a database with which to create a session.
-   *                            NOTE: closes the transaction on the session regardless of whether
-   *                              it was passed in or created from a database.
-   */
+  /** Returns a Play Enumerator which fetches the results of the given ScalaQuery Query in chunks.
+    *
+    * @param sessionOrDatabase   Provide either a session (useful for consistent reads across a
+    *                            larger transaction), or a database with which to create a session.
+    *                            NOTE: closes the transaction on the session regardless of whether
+    *                              it was passed in or created from a database.
+    */
   def enumerateScalaQuery[Q, E, R](driverProfile: ExtendedProfile,
                                    sessionOrDatabase: Either[SessionWithAsyncTransaction, Database],
                                    query: Query[Q, R],
@@ -77,15 +76,14 @@ object ScalaQueryPlayIteratees {
       Enumeratee.recover((_, _) => chunkedFetcher.completeTransaction)
   }
 
-  /**
-   * Represents a stateful data pump to execute the query in chunks, for use in
-   * constructing an Enumerator to represent the response chunks as a stream to
-   * be fed to an Iteratee.
-   *
-   * NOTE: relies on the provided SessionWithAsyncTransaction, as well as the
-   *   configuration of the underlying database, to ensure that read consistency
-   *   is maintained across the fetching of multiple chunks.
-   */
+  /** Represents a stateful data pump to execute the query in chunks, for use in
+    * constructing an Enumerator to represent the response chunks as a stream to
+    * be fed to an Iteratee.
+    *
+    * NOTE: relies on the provided SessionWithAsyncTransaction, as well as the
+    *   configuration of the underlying database, to ensure that read consistency
+    *   is maintained across the fetching of multiple chunks.
+    */
   private class ChunkedScalaQueryFetcher[Q, R](val driverProfile: ExtendedProfile,
                                                val session: SessionWithAsyncTransaction,
                                                val query: Query[Q, R],
@@ -93,10 +91,9 @@ object ScalaQueryPlayIteratees {
                                                val logCallback: LogCallback)(implicit val ec: ExecutionContext) {
     import driverProfile.Implicit._
 
-    /**
-     * Mutable state for this enumeration of query results. Follows the pattern
-     * of Enumerator.fromStream, which has an InputStream as mutable state.
-     */
+    /** Mutable state for this enumeration of query results. Follows the pattern
+      * of Enumerator.fromStream, which has an InputStream as mutable state.
+      */
     private var position: Int = 0
 
     /** Returns a Promise containing None when no more results are available */
@@ -115,11 +112,10 @@ object ScalaQueryPlayIteratees {
       futureResults
     }
 
-    /**
-     * When done, must call this to ensure that connection is committed, releasing any
-     * underlying read locks or other mechanisms used by the database to ensure read
-     * consistency across multiple statements in a single transaction.
-     */
+    /** When done, must call this to ensure that connection is committed, releasing any
+      * underlying read locks or other mechanisms used by the database to ensure read
+      * consistency across multiple statements in a single transaction.
+      */
     def completeTransaction() {
       session.ensureAsyncTransactionIsCompleted()
     }
@@ -152,6 +148,7 @@ object ScalaQueryPlayIteratees {
       Some(results).filterNot(_.isEmpty) // return Future.successful(None) if no results
     }
 
+    /** Asynchronously log success or failure as soon as they are available */
     private def log(startTime: DateTime, startPosition: Int,
                     futureResults: Future[Option[List[R]]], futureMaybeSql: Future[Option[String]]) {
       // Log any error with sql statement (unless that's where the error occurred, so not available)

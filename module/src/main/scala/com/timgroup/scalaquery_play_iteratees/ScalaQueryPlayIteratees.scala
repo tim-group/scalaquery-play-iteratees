@@ -104,25 +104,13 @@ object ScalaQueryPlayIteratees {
       val startTime = DateTime.now
       val startPosition = position // capture this, since position will changed when we execute
 
-      // the only places errors might occur: chunking query, generating sql, and executing query
+      // only places errors might occur: chunking query, generating sql, and executing query
       val futureMaybeChunkedQuery = chunkQuery(query)
       val futureMaybeSql          = futureMaybeChunkedQuery.flatMap(generateSql)
       val futureResults           = futureMaybeChunkedQuery.flatMap(executeQuery)
 
-      // Log any error with sql statement (unless that's where the error occurred)
-      for {
-        ex       <- futureResults.failed
-        maybeSql <- futureMaybeSql.recover { case _ => None }
-        endTime  =  DateTime.now
-      } logCallback(LogFields(startTime, endTime, startPosition, None, maybeSql, Some(ex)))
-
-      // Or, log success
-      for {
-        maybeResults    <- futureResults
-        maybeSql        <- futureMaybeSql
-        maybeNumResults =  maybeResults.map(_.length)
-        endTime         =  DateTime.now
-      } logCallback(LogFields(startTime, endTime, startPosition, maybeNumResults, maybeSql, None))
+      // call log callback for success or failure
+      log(startTime, startPosition, futureResults, futureMaybeSql)
 
       futureResults
     }
@@ -162,6 +150,24 @@ object ScalaQueryPlayIteratees {
       position += results.size // update mutable counter based on count of results fetched
 
       Some(results).filterNot(_.isEmpty) // return Future.successful(None) if no results
+    }
+
+    private def log(startTime: DateTime, startPosition: Int,
+                    futureResults: Future[Option[List[R]]], futureMaybeSql: Future[Option[String]]) {
+      // Log any error with sql statement (unless that's where the error occurred, so not available)
+      for {
+        ex       <- futureResults.failed
+        maybeSql <- futureMaybeSql.recover { case _ => None }
+        endTime  =  DateTime.now
+      } logCallback(LogFields(startTime, endTime, startPosition, None, maybeSql, Some(ex)))
+
+      // Or, log success
+      for {
+        maybeResults    <- futureResults
+        maybeSql        <- futureMaybeSql
+        maybeNumResults =  maybeResults.map(_.length)
+        endTime         =  DateTime.now
+      } logCallback(LogFields(startTime, endTime, startPosition, maybeNumResults, maybeSql, None))
     }
 
   }

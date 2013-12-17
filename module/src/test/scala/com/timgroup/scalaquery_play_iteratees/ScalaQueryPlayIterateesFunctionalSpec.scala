@@ -10,7 +10,7 @@ import com.typesafe.slick.testkit.util.TestDB
 import org.h2.jdbc.JdbcSQLException
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.OptionValues._
-import org.scalatest.matchers.MustMatchers
+import org.scalatest.Matchers
 import org.scalatest.path
 import play.api.libs.iteratee.{Enumeratee, Error, Input, Iteratee}
 import scala.slick.driver.{QueryBuilderInput, H2Driver, ExtendedProfile}
@@ -19,7 +19,7 @@ import scala.slick.session.SessionWithAsyncTransaction
 
 import ScalaQueryPlayIteratees.{LogFields, LogCallback, enumerateScalaQuery}
 
-class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatchers {
+class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
   // Create in-memory test DB and import its implicits
   val tdb = new TestDB("h2mem", scala.slick.driver.H2Driver) {
     val url = "jdbc:h2:mem:scalaquery-play-iteratees_spec;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1;LOCK_MODE=1"
@@ -66,7 +66,7 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatche
       it("should close transaction after successful execution") {
         val session = new SessionWithAsyncTransaction(db)
         testChunkedEnumerationUsingInMemoryDb(fiveRowsInDb, None, List(fiveRowsInDb), maybeExternalSession = Some(session))
-        session.inTransaction must be(false)
+        session.inTransaction should be(false)
       }
 
     }
@@ -74,20 +74,20 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatche
     describe("Error handling") {
 
       it("should throw argument exception if chunkSize <= 0") {
-        evaluating { testChunkedEnumerationUsingInMemoryDb(Nil, Some(0), Nil) } must produce [IllegalArgumentException]
+        evaluating { testChunkedEnumerationUsingInMemoryDb(Nil, Some(0), Nil) } should produce [IllegalArgumentException]
       }
 
       it("should propagate exception generated during query execution") {
         val criterion: TestQueryCriterion = (_.doesNotExist isNotNull)
-        val thrown = evaluating { testChunkedEnumerationUsingInMemoryDb(Nil, None, Nil, criteria = Seq(criterion)) } must produce [JdbcSQLException]
-        thrown.getMessage must startWith ("""Column "x2.DOES_NOT_EXIST" not found;""")
+        val thrown = evaluating { testChunkedEnumerationUsingInMemoryDb(Nil, None, Nil, criteria = Seq(criterion)) } should produce [JdbcSQLException]
+        thrown.getMessage should startWith ("""Column "x2.DOES_NOT_EXIST" not found;""")
       }
 
       it("should close transaction when exception generated during query execution") {
         val session = new SessionWithAsyncTransaction(db)
         val criterion: TestQueryCriterion = (_.doesNotExist isNotNull)
-        evaluating { testChunkedEnumerationUsingInMemoryDb(Nil, None, Nil, criteria = Seq(criterion), maybeExternalSession = Some(session)) } must produce [JdbcSQLException]
-        session.inTransaction must be(false)
+        evaluating { testChunkedEnumerationUsingInMemoryDb(Nil, None, Nil, criteria = Seq(criterion), maybeExternalSession = Some(session)) } should produce [JdbcSQLException]
+        session.inTransaction should be(false)
       }
 
       it("should close transaction when exception generated in downstream Enumeratee") {
@@ -97,8 +97,8 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatche
           testChunkedEnumerationUsingInMemoryDb(fiveRowsInDb, Some(2), rowsInDbExcludingC.grouped(2).toList,
             maybeExtraEnumeratee = Some(exceptionThrowingEnumeratee),
             maybeExternalSession = Some(session))
-        } must produce [RuntimeException]
-        session.inTransaction must be(false)
+        } should produce [RuntimeException]
+        session.inTransaction should be(false)
       }
 
       it("should close transaction when downstream Enumeratee is in Error state") {
@@ -110,8 +110,8 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatche
           testChunkedEnumerationUsingInMemoryDb(fiveRowsInDb, Some(2), rowsInDbExcludingC.grouped(2).toList,
             maybeExtraEnumeratee = Some(errorStateEnumeratee),
             maybeExternalSession = Some(session))
-        } must produce [RuntimeException]
-        session.inTransaction must be(false)
+        } should produce [RuntimeException]
+        session.inTransaction should be(false)
       }
 
     }
@@ -135,8 +135,8 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatche
           testChunkedEnumerationUsingInMemoryDb(fiveRowsInDb, Some(2), fiveRowsInDb.grouped(2).toList,
             maybeExtraEnumeratee = Some(createInterleavedWritesEnumeratee),
             maybeExternalSession = Some(new FakeSessionWithAsyncTransactionForTesting(db)))
-        } must produce [TestFailedException]
-        thrown.getMessage must endWith ("was not equal to " + fiveRowsInDb.toString)
+        } should produce [TestFailedException]
+        thrown.getMessage should endWith ("was not equal to " + fiveRowsInDb.toString)
       }
 
     }
@@ -225,8 +225,8 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatche
     val result = Await.result(eventuallyResult, 5 seconds)
 
     // Verify expectations
-    result must be(maybeExpectedResults.getOrElse(rowsInDb)) // returned expected rows
-    chunksSent must be(expectedChunksSent)                   // chunked as expected
+    result should be(maybeExpectedResults.getOrElse(rowsInDb)) // returned expected rows
+    chunksSent should be(expectedChunksSent)                   // chunked as expected
   }
 
   def createInterleavedWritesEnumeratee: Enumeratee[List[TestRow], List[TestRow]] = {
@@ -265,25 +265,25 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatche
 
   def testLoggedStartAndEndTimes(scenario: TestScenariosForLogging) {
     val logged = testLogging(scenario)
-    logged.startTime.getMillis must be <= (logged.endTime.getMillis)
+    logged.startTime.getMillis should be <= (logged.endTime.getMillis)
   }
 
   def testLoggedNoSqlStatement(scenario: TestScenariosForLogging) {
-    testLogging(scenario).maybeSqlStmt must be(None)
+    testLogging(scenario).maybeSqlStmt should be(None)
   }
 
   def testLoggedSqlStatement(scenario: TestScenariosForLogging) {
-    testLogging(scenario).maybeSqlStmt.value must include ("limit")
+    testLogging(scenario).maybeSqlStmt.value should include ("limit")
   }
 
   def testLoggedNoException(scenario: TestScenariosForLogging) {
-    testLogging(scenario).maybeException must be(None)
+    testLogging(scenario).maybeException should be(None)
   }
 
   def testLoggedException(scenario: TestScenariosForLogging, exceptionClass: Class[_] = classOf[JdbcSQLException]) {
     val maybeException = testLogging(scenario).maybeException
-    maybeException must be('defined)
-    maybeException.value.getClass must be(exceptionClass)
+    maybeException should be('defined)
+    maybeException.value.getClass should be(exceptionClass)
   }
 
   def testLogging(scenario: TestScenariosForLogging): LogFields = {

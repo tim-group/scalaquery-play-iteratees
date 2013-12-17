@@ -46,6 +46,7 @@ class Records extends Table[Record]("records") {
 
 See the included [sample play app](sample) for a working example.
 
+
 Adding SBT Dependency
 ---------------------
 
@@ -58,10 +59,14 @@ The latest published release is **[1.0.0](http://oss.sonatype.org/content/reposi
 
 Please see branch [0.9.x](https://github.com/youdevise/scalaquery-play-iteratees/tree/0.9.x).
 
+
 Status
 ------
 
-This code is working in production code based on Play 2.0.8, ScalaQuery 0.10.0-M1, on Scala 2.9.2. 
+This code is working in production code. Questions and pull requests
+are welcome. No support is currently planned for Play 2.1.x at this
+time.
+
 
 Copyright
 ---------

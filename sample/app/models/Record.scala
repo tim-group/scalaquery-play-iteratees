@@ -1,15 +1,16 @@
 package models
 
-import org.scalaquery.ql.extended.{ExtendedTable => Table, H2Driver}
-import org.scalaquery.ql.Query
-import org.scalaquery.ql.TypeMapper._
-import org.scalaquery.session.Database
-import org.scalaquery.session.Database.threadLocalSession
 import play.api.db.DB
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, JsValue, Writes}
 import play.api.libs.json.Json._
 import play.api.Logger
 import play.api.Play.current
+
+import scala.slick.driver.H2Driver
+import scala.slick.driver.H2Driver.simple._
+import scala.slick.session.Database
+import scala.slick.session.Database.threadLocalSession
 
 import com.timgroup.scalaquery_play_iteratees.ScalaQueryPlayIteratees.{enumerateScalaQuery, PlayLogCallback}
 
@@ -18,7 +19,6 @@ case class Record(id: Int, name: String)
 class Records extends Table[Record]("records") {
   def database = Database.forDataSource(DB.getDataSource("default"))
   lazy val profile = H2Driver
-  import profile.Implicit._
 
   // mapped columns
   def id   = column[Int   ]("id")
@@ -27,7 +27,7 @@ class Records extends Table[Record]("records") {
 
   def mkQuery = for { r <- this } yield r
 
-  def count = database withSession { Query(mkQuery.count).first }
+  def count = database withSession { Query(mkQuery.length).first }
 
   def all = database withSession { mkQuery.list }
 

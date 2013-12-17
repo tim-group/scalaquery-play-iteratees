@@ -1,26 +1,23 @@
 package com.timgroup.scalaquery_play_iteratees
 
-import scala.util.control.Exception.allCatch
 import scala.util.{Try, Random}
 
-import scala.concurrent.{Promise, Await, Future}
+import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import com.typesafe.slick.testkit.util.TestDB
 import org.h2.jdbc.JdbcSQLException
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.OptionValues._
 import org.scalatest.matchers.MustMatchers
 import org.scalatest.path
-import play.api.libs.iteratee.{Error, Input, Enumeratee, Iteratee}
-import scala.slick.driver.H2Driver.simple._
-
-import com.typesafe.slick.testkit.util.TestDB
-
-import ScalaQueryPlayIteratees.{LogFields, LogCallback, enumerateScalaQuery}
+import play.api.libs.iteratee.{Enumeratee, Error, Input, Iteratee}
+import scala.slick.driver.{QueryBuilderInput, H2Driver, ExtendedProfile}
 import scala.slick.session.Database.threadLocalSession
 import scala.slick.session.SessionWithAsyncTransaction
-import scala.slick.driver.{QueryBuilderInput, H2Driver, ExtendedProfile}
+
+import ScalaQueryPlayIteratees.{LogFields, LogCallback, enumerateScalaQuery}
 
 class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatchers {
   // Create in-memory test DB and import its implicits
@@ -30,7 +27,7 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatche
   }
 
   lazy val db = tdb.createDB()
-  import tdb.driver.Implicit._
+  import tdb.driver.simple._
 
   // names for certain sets of test rows
   val fiveRowsInDb = List((1, "a"), (2, "b"), (3, "c"), (4, "d"), (5, "e")).map(TestRow.tupled)

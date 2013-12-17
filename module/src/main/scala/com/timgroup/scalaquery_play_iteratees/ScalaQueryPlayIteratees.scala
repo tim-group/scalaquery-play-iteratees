@@ -1,20 +1,14 @@
 package com.timgroup.scalaquery_play_iteratees
 
-import scala.util.control.Exception.allCatch
-
-import org.joda.time.DateTime
-
 import scala.concurrent.{ExecutionContext, Future}
 
+import org.joda.time.DateTime
 import scala.slick.driver.ExtendedProfile
 import scala.slick.lifted.Query
 import scala.slick.session.SessionWithAsyncTransaction
 import scala.slick.session.Database
-
-import play.api.libs.concurrent.Promise
 import play.api.libs.iteratee.{Enumeratee, Enumerator}
 import play.api.LoggerLike
-import scala.util.Try
 
 object ScalaQueryPlayIteratees {
 

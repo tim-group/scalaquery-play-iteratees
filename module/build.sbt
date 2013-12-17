@@ -14,13 +14,16 @@ crossScalaVersions := Seq("2.10.3")
 resolvers += "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= Seq(
-  "com.typesafe.slick" %% "slick" % "1.0.1" intransitive(),
   "com.typesafe.play" %% "play-slick" % "0.5.0.8" intransitive(),
+  "com.typesafe.slick" %% "slick" % "1.0.1" intransitive(),
+  "com.h2database" % "h2" % "1.3.166" intransitive(),
   "joda-time" % "joda-time" % "2.3" intransitive(),
   "org.joda" % "joda-convert" % "1.5" intransitive(),
   "org.slf4j" % "slf4j-api" % "[1.6.6]" force(),
   // Test-only dependencies
-  "org.mockito" % "mockito-core" % "1.9.0" % "test"
+  "org.mockito" % "mockito-core" % "1.9.0" % "test",
+  "com.typesafe.slick" %% "slick-testkit" % "1.0.1" % "test",
+  "ch.qos.logback" % "logback-classic" % "1.0.13" % "test"
 )
 
 libraryDependencies <++= (scalaVersion, playVersion) { CrossVersionDependencies.play(_, _) }

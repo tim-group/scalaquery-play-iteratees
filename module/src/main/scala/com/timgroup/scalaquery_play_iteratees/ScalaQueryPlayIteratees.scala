@@ -4,7 +4,7 @@ import scala.util.control.Exception.allCatch
 
 import org.joda.time.DateTime
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 import scala.slick.driver.ExtendedProfile
 import scala.slick.lifted.Query
@@ -12,8 +12,9 @@ import scala.slick.session.SessionWithAsyncTransaction
 import scala.slick.session.Database
 
 import play.api.libs.concurrent.Promise
-import play.api.libs.iteratee.Enumerator
+import play.api.libs.iteratee.{Enumeratee, Enumerator}
 import play.api.LoggerLike
+import scala.util.Try
 
 object ScalaQueryPlayIteratees {
 
@@ -58,116 +59,114 @@ object ScalaQueryPlayIteratees {
     }
   }
 
-//  /**
-//   * Returns a Play Enumerator which fetches the results of the given ScalaQuery Query in chunks.
-//   *
-//   * @param sessionOrDatabase   Provide either a session (useful for consistent reads across a
-//   *                            larger transaction), or a database with which to create a session.
-//   *                            NOTE: closes the transaction on the session regardless of whether
-//   *                              it was passed in or created from a database.
-//   */
-//  def enumerateScalaQuery[Q, E, R](driverProfile: ExtendedProfile,
-//                                   sessionOrDatabase: Either[SessionWithAsyncTransaction, Database],
-//                                   query: Query[Q, R],
-//                                   maybeChunkSize: Option[Int] = Some(DefaultQueryChunkSize),
-//                                   logCallback: LogCallback = EmptyLogCallback): Enumerator[List[R]] = {
-//    maybeChunkSize.filter(_ <= 0).foreach { _ => throw new IllegalArgumentException("chunkSize must be >= 1") }
-//
-//    val session = sessionOrDatabase.fold(session => session, db => new SessionWithAsyncTransaction(db))
-//    val chunkedFetcher = new ChunkedScalaQueryFetcher(driverProfile, session, query, maybeChunkSize, logCallback)
-//
-//    IterateesWithFixedExceptionHandling.Enumerator.fromCallback(
-//      () => chunkedFetcher.fetchNextChunk,
-//      () => chunkedFetcher.completeTransaction,
-//      (_, _) => chunkedFetcher.completeTransaction)
-//  }
-//
-//  /**
-//   * Represents a stateful data pump to execute the query in chunks, for use in
-//   * constructing an Enumerator to represent the response chunks as a stream to
-//   * be fed to an Iteratee.
-//   *
-//   * NOTE: relies on the provided SessionWithAsyncTransaction, as well as the
-//   *   configuration of the underlying database, to ensure that read consistency
-//   *   is maintained across the fetching of multiple chunks.
-//   */
-//  private class ChunkedScalaQueryFetcher[Q, R](val driverProfile: ExtendedProfile,
-//                                               val session: SessionWithAsyncTransaction,
-//                                               val query: Query[Q, R],
-//                                               val maybeChunkSize: Option[Int],
-//                                               val logCallback: LogCallback) {
-//    import driverProfile.Implicit._
-//
-//    /**
-//     * Mutable state for this enumeration of query results. Follows the pattern
-//     * of Enumerator.fromStream, which has an InputStream as mutable state.
-//     */
-//    private var position: Int = 0
-//
-//    /** Returns a Promise containing None when no more results are available */
-//    def fetchNextChunk: Future[Option[List[R]]] = {
-//      val startTime = DateTime.now
-//      val startPosition = position // capture this, since position will changed when we execute
-//
-//      // the only places errors might occur: sql generation, and fetching from db
-//      val queryAndSqlOrError = chunkQueryAndGenerateSql
-//      val promiseOrError = queryAndSqlOrError.right.flatMap { queryAndSql => executeQuery(queryAndSql._1) }
-//
-//      // log what happened (log an error immediately, log success by chaining onto the Promise)
-//      val endTime = DateTime.now
-//      val maybeSqlStatement = queryAndSqlOrError.right.toOption.flatMap(_._2)
-//
-//      promiseOrError.left.foreach { ex =>
-//        logCallback(LogFields(startTime, endTime, startPosition, None, maybeSqlStatement, Some(ex)))
-//      }
-//
-//      val promiseWithLoggingOrError = promiseOrError.right.map { p =>
-//        p.onRedeem { maybeResults =>
-//          val maybeNumResults = maybeResults.map(_.length)
-//          logCallback(LogFields(startTime, endTime, startPosition, maybeNumResults, maybeSqlStatement, None))
-//        }
-//        p
-//      }
-//
-//      // rethrow any exception, or return results with async logging
-//      promiseWithLoggingOrError.fold(e => throw e, p => p)
-//    }
-//
-//    /** First place that an exception might occur: chunking the query, and generating the sql for logging */
-//    private def chunkQueryAndGenerateSql: Either[Throwable, (Option[Query[Q, R]], Option[String])] = allCatch either {
-//      val maybeQueryWithChunking = (maybeChunkSize, position) match {
-//        case (Some(chunkSize), _) => Some(query.drop(position).take(chunkSize))
-//        case (None, 0)            => Some(query)
-//        case _                    => None
-//      }
-//
-//      val maybeSqlStatement = maybeQueryWithChunking.map(_.selectStatement)
-//
-//      (maybeQueryWithChunking, maybeSqlStatement)
-//    }
-//
-//    /** Second place that an exception might occur: executing the query */
-//    private def executeQuery(maybeQueryWithChunking: Option[Query[Q, R]]): Either[Throwable, Promise[Option[List[R]]]] = allCatch either {
-//      val results: List[R] = session.withAsyncTransaction { implicit sessionWithTransaction =>
-//        maybeQueryWithChunking match {
-//          case Some(query) => query.list
-//          case None        => Nil
-//        }
-//      }
-//
-//      position += results.size // update mutable counter based on count of results fetched
-//
-//      Promise.pure(Some(results).filterNot(_.isEmpty)) // return Promise(None) if no results
-//    }
-//
-//    /**
-//     * When done, must call this to ensure that connection is committed, releasing any
-//     * underlying read locks or other mechanisms used by the database to ensure read
-//     * consistency across multiple statements in a single transaction.
-//     */
-//    def completeTransaction() {
-//      session.ensureAsyncTransactionIsCompleted()
-//    }
-//  }
+  /**
+   * Returns a Play Enumerator which fetches the results of the given ScalaQuery Query in chunks.
+   *
+   * @param sessionOrDatabase   Provide either a session (useful for consistent reads across a
+   *                            larger transaction), or a database with which to create a session.
+   *                            NOTE: closes the transaction on the session regardless of whether
+   *                              it was passed in or created from a database.
+   */
+  def enumerateScalaQuery[Q, E, R](driverProfile: ExtendedProfile,
+                                   sessionOrDatabase: Either[SessionWithAsyncTransaction, Database],
+                                   query: Query[Q, R],
+                                   maybeChunkSize: Option[Int] = Some(DefaultQueryChunkSize),
+                                   logCallback: LogCallback = EmptyLogCallback)(implicit ec: ExecutionContext): Enumerator[List[R]] = {
+    maybeChunkSize.filter(_ <= 0).foreach { _ => throw new IllegalArgumentException("chunkSize must be >= 1") }
+
+    val session = sessionOrDatabase.fold(session => session, db => new SessionWithAsyncTransaction(db))
+    val chunkedFetcher = new ChunkedScalaQueryFetcher(driverProfile, session, query, maybeChunkSize, logCallback)
+
+    Enumerator.generateM(chunkedFetcher.fetchNextChunk) &>
+      Enumeratee.onEOF(() => chunkedFetcher.completeTransaction) &>
+      Enumeratee.onIterateeDone(() => chunkedFetcher.completeTransaction) &>
+      Enumeratee.recover((_, _) => chunkedFetcher.completeTransaction)
+  }
+
+  /**
+   * Represents a stateful data pump to execute the query in chunks, for use in
+   * constructing an Enumerator to represent the response chunks as a stream to
+   * be fed to an Iteratee.
+   *
+   * NOTE: relies on the provided SessionWithAsyncTransaction, as well as the
+   *   configuration of the underlying database, to ensure that read consistency
+   *   is maintained across the fetching of multiple chunks.
+   */
+  private class ChunkedScalaQueryFetcher[Q, R](val driverProfile: ExtendedProfile,
+                                               val session: SessionWithAsyncTransaction,
+                                               val query: Query[Q, R],
+                                               val maybeChunkSize: Option[Int],
+                                               val logCallback: LogCallback)(implicit val ec: ExecutionContext) {
+    import driverProfile.Implicit._
+
+    /**
+     * Mutable state for this enumeration of query results. Follows the pattern
+     * of Enumerator.fromStream, which has an InputStream as mutable state.
+     */
+    private var position: Int = 0
+
+    /** Returns a Promise containing None when no more results are available */
+    def fetchNextChunk: Future[Option[List[R]]] = {
+      val startTime = DateTime.now
+      val startPosition = position // capture this, since position will changed when we execute
+
+      // the only places errors might occur: sql generation, and then fetching from db
+      val queryAndSqlOrError = chunkQueryAndGenerateSql
+      val promiseOrError = queryAndSqlOrError.flatMap { queryAndSql => executeQuery(queryAndSql._1) }
+
+      // Log any error with sql statement (unless that's where the error occurred)
+      for {
+        ex                <- promiseOrError.failed
+        maybeSqlStatement <- queryAndSqlOrError.map(_._2).recover { case _ => None }
+        endTime           =  DateTime.now
+      } logCallback(LogFields(startTime, endTime, startPosition, None, maybeSqlStatement, Some(ex)))
+
+      // Or, log success
+      for {
+        maybeSqlStatement <- queryAndSqlOrError.map(_._2)
+        maybeResults      <- promiseOrError
+        maybeNumResults   =  maybeResults.map(_.length)
+        endTime           =  DateTime.now
+      } logCallback(LogFields(startTime, endTime, startPosition, maybeNumResults, maybeSqlStatement, None))
+
+      promiseOrError
+    }
+
+    /** First place that an exception might occur: chunking the query, and generating the sql for logging */
+    private def chunkQueryAndGenerateSql: Future[(Option[Query[Q, R]], Option[String])] = Future {
+      val maybeQueryWithChunking = (maybeChunkSize, position) match {
+        case (Some(chunkSize), _) => Some(query.drop(position).take(chunkSize))
+        case (None, 0)            => Some(query)
+        case _                    => None
+      }
+
+      val maybeSqlStatement = maybeQueryWithChunking.map(_.selectStatement)
+
+      (maybeQueryWithChunking, maybeSqlStatement)
+    }
+
+    /** Second place that an exception might occur: executing the query */
+    private def executeQuery(maybeQueryWithChunking: Option[Query[Q, R]]) = Future {
+      val results: List[R] = session.withAsyncTransaction { implicit sessionWithTransaction =>
+        maybeQueryWithChunking match {
+          case Some(query) => query.list
+          case None        => Nil
+        }
+      }
+
+      position += results.size // update mutable counter based on count of results fetched
+
+      Some(results).filterNot(_.isEmpty) // return Future.successful(None) if no results
+    }
+
+    /**
+     * When done, must call this to ensure that connection is committed, releasing any
+     * underlying read locks or other mechanisms used by the database to ensure read
+     * consistency across multiple statements in a single transaction.
+     */
+    def completeTransaction() {
+      session.ensureAsyncTransactionIsCompleted()
+    }
+  }
 
 }

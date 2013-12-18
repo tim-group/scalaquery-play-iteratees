@@ -1,5 +1,6 @@
 package com.timgroup.scalaquery_play_iteratees
 
+import scala.language.postfixOps
 import scala.util.{Try, Random}
 
 import scala.concurrent.{Await, Future, Promise}

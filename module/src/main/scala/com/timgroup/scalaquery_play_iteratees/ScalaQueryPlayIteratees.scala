@@ -99,15 +99,15 @@ object ScalaQueryPlayIteratees {
     /** Returns a Promise containing None when no more results are available */
     def fetchNextChunk: Future[Option[List[R]]] = {
       val startTime = DateTime.now
-      val startPosition = position // capture this, since position will changed when we execute
+      val startPosition = position // capture this, since position will change when we execute
 
       // only places errors might occur: chunking query, generating sql, and executing query
       val futureMaybeChunkedQuery = chunkQuery(query)
       val futureMaybeSql          = futureMaybeChunkedQuery.flatMap(generateSql)
       val futureResults           = futureMaybeChunkedQuery.flatMap(executeQuery)
 
-      // call log callback for success or failure
-      log(startTime, startPosition, futureResults, futureMaybeSql)
+      // chain async success and error logging onto the above futures
+      asyncLogSuccessOrFailure(startTime, startPosition, futureResults, futureMaybeSql)
 
       futureResults
     }
@@ -149,8 +149,8 @@ object ScalaQueryPlayIteratees {
     }
 
     /** Asynchronously log success or failure as soon as they are available */
-    private def log(startTime: DateTime, startPosition: Int,
-                    futureResults: Future[Option[List[R]]], futureMaybeSql: Future[Option[String]]) {
+    private def asyncLogSuccessOrFailure(startTime: DateTime, startPosition: Int,
+                                         futureResults: Future[Option[List[R]]], futureMaybeSql: Future[Option[String]]) {
       // Log any error with sql statement (unless that's where the error occurred, so not available)
       for {
         ex       <- futureResults.failed

@@ -3,7 +3,7 @@ name := "scalaquery-play-iteratees"
 organization := "com.timgroup"
 
 // Change to non-SNAPSHOT version to publish a release
-version := "1.0.0-SNAPSHOT"
+version := "1.1.0-SNAPSHOT"
 
 scalaVersion := "2.10.3"
 

@@ -8,6 +8,7 @@ Go to the [1.0.x](https://github.com/youdevise/scalaquery-play-iteratees/tree/1.
 
 Go to the [0.9.x](https://github.com/youdevise/scalaquery-play-iteratees/tree/0.9.x) branch for use with _Play 2.0.x_ and ScalaQuery 0.10.0-M1 on Scala language 2.9.x.
 
+
 News
 ----
 
@@ -58,10 +59,13 @@ See the included [sample play app](sample) for a working example.
 Adding SBT Dependency
 ---------------------
 
+##### Scala 2.10.x + Play 2.2.x + Slick 2.0.0-RC1: #####
+
+Coming soon! Please comment on [this ticket](https://github.com/freekh/play-slick/issues/115) if you'd like to help.
+
 ##### Scala 2.10.x + Play 2.2.x + Slick 1.0.1: #####
 
-The latest published release is **[1.0.0-M1](http://oss.sonatype.org/content/repositories/releases/com/timgroup/scalaquery-play-iteratees_2.10/1.0.0-M1/)**. Add dependency to **project/Build.scala** as: `"com.timgroup" %% "scalaquery-play-iteratees" % "1.0.0-M1"`
-
+Please see branch [1.0.x](https://github.com/youdevise/scalaquery-play-iteratees/tree/1.0.x).
 
 ##### Scala 2.9.x + Play 2.0.x + ScalaQuery 0.10.0-M1: #####
 

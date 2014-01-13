@@ -8,12 +8,6 @@ Go to the [master](https://github.com/youdevise/scalaquery-play-iteratees/tree/m
 
 Go to the [0.9.x](https://github.com/youdevise/scalaquery-play-iteratees/tree/0.9.x) branch for use with _Play 2.0.x_ and _ScalaQuery 0.10.0-M1_ on Scala language _2.9.x_.
 
-News
-----
-
-There is work going on now to merge this library into the [play-slick](https://github.com/freekh/play-slick), see [freekh/play-slick#115](https://github.com/freekh/play-slick/issues/115). Please feel free to comment on that issue if you have suggestions or would like to help.
-
-
 Summary
 -------
 Easily create a Play 2.2.x [Enumerator](http://www.playframework.com/documentation/2.2.x/Enumerators)

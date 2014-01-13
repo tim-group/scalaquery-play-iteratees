@@ -3,10 +3,12 @@ package com.timgroup.scalaquery_play_iteratees
 import scala.concurrent.{ExecutionContext, Future}
 
 import org.joda.time.DateTime
-import scala.slick.driver.ExtendedProfile
+
+import scala.slick.driver.JdbcProfile
+import scala.slick.jdbc.JdbcBackend
 import scala.slick.lifted.Query
-import scala.slick.session.SessionWithAsyncTransaction
-import scala.slick.session.Database
+import scala.slick.jdbc.SessionWithAsyncTransaction
+
 import play.api.libs.iteratee.{Enumeratee, Enumerator}
 import play.api.LoggerLike
 
@@ -60,8 +62,8 @@ object ScalaQueryPlayIteratees {
     *                            NOTE: closes the transaction on the session regardless of whether
     *                              it was passed in or created from a database.
     */
-  def enumerateScalaQuery[Q, E, R](driverProfile: ExtendedProfile,
-                                   sessionOrDatabase: Either[SessionWithAsyncTransaction, Database],
+  def enumerateScalaQuery[Q, E, R](driverProfile: JdbcProfile,
+                                   sessionOrDatabase: Either[SessionWithAsyncTransaction, JdbcBackend#Database],
                                    query: Query[Q, R],
                                    maybeChunkSize: Option[Int] = Some(DefaultQueryChunkSize),
                                    logCallback: LogCallback = EmptyLogCallback)(implicit ec: ExecutionContext): Enumerator[List[R]] = {
@@ -84,7 +86,7 @@ object ScalaQueryPlayIteratees {
     *   configuration of the underlying database, to ensure that read consistency
     *   is maintained across the fetching of multiple chunks.
     */
-  private class ChunkedScalaQueryFetcher[Q, R](val driverProfile: ExtendedProfile,
+  private class ChunkedScalaQueryFetcher[Q, R](val driverProfile: JdbcProfile,
                                                val session: SessionWithAsyncTransaction,
                                                val query: Query[Q, R],
                                                val maybeChunkSize: Option[Int],

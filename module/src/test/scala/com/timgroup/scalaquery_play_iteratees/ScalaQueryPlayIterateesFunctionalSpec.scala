@@ -7,24 +7,25 @@ import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import com.typesafe.slick.testkit.util.TestDB
+import com.typesafe.slick.testkit.util.JdbcTestDB
 import org.h2.jdbc.JdbcSQLException
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.OptionValues._
 import org.scalatest.Matchers
 import org.scalatest.path
 import play.api.libs.iteratee.{Enumeratee, Error, Input, Iteratee}
-import scala.slick.driver.{QueryBuilderInput, H2Driver, ExtendedProfile}
-import scala.slick.session.Database.threadLocalSession
-import scala.slick.session.SessionWithAsyncTransaction
+import scala.slick.driver.JdbcProfile
+import scala.slick.jdbc.SessionWithAsyncTransaction
 
 import ScalaQueryPlayIteratees.{LogFields, LogCallback, enumerateScalaQuery}
 
 class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
   // Create in-memory test DB and import its implicits
-  val tdb = new TestDB("h2mem", scala.slick.driver.H2Driver) {
+  val tdb = new JdbcTestDB("h2mem") {
+    type Driver = scala.slick.driver.H2Driver
     val url = "jdbc:h2:mem:scalaquery-play-iteratees_spec;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1;LOCK_MODE=1"
     val jdbcDriver = "org.h2.Driver"
+    val driver = scala.slick.driver.H2Driver
   }
 
   lazy val db = tdb.createDB()
@@ -65,9 +66,9 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
       }
 
       it("should close transaction after successful execution") {
-        val session = new SessionWithAsyncTransaction(db)
+        val session = new SessionWithAsyncTransactionForTesting
         testChunkedEnumerationUsingInMemoryDb(fiveRowsInDb, None, List(fiveRowsInDb), maybeExternalSession = Some(session))
-        session.inTransaction should be(false)
+        session.isInTransaction should be(false)
       }
 
     }
@@ -85,25 +86,25 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
       }
 
       it("should close transaction when exception generated during query execution") {
-        val session = new SessionWithAsyncTransaction(db)
+        val session = new SessionWithAsyncTransactionForTesting
         val criterion: TestQueryCriterion = (_.doesNotExist isNotNull)
         evaluating { testChunkedEnumerationUsingInMemoryDb(Nil, None, Nil, criteria = Seq(criterion), maybeExternalSession = Some(session)) } should produce [JdbcSQLException]
-        session.inTransaction should be(false)
+        session.isInTransaction should be(false)
       }
 
       it("should close transaction when exception generated in downstream Enumeratee") {
-        val session = new SessionWithAsyncTransaction(db)
+        val session = new SessionWithAsyncTransactionForTesting
         val exceptionThrowingEnumeratee = Enumeratee.map { chunk: List[TestRow] => throw new RuntimeException("boo!"); chunk }
         evaluating {
           testChunkedEnumerationUsingInMemoryDb(fiveRowsInDb, Some(2), rowsInDbExcludingC.grouped(2).toList,
             maybeExtraEnumeratee = Some(exceptionThrowingEnumeratee),
             maybeExternalSession = Some(session))
         } should produce [RuntimeException]
-        session.inTransaction should be(false)
+        session.isInTransaction should be(false)
       }
 
       it("should close transaction when downstream Enumeratee is in Error state") {
-        val session = new SessionWithAsyncTransaction(db)
+        val session = new SessionWithAsyncTransactionForTesting
         val errorStateEnumeratee = new Enumeratee[List[TestRow], List[TestRow]] {
           def applyOn[A](inner: Iteratee[List[TestRow], A]) = Error("testing!", Input.Empty)
         }
@@ -112,7 +113,7 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
             maybeExtraEnumeratee = Some(errorStateEnumeratee),
             maybeExternalSession = Some(session))
         } should produce [RuntimeException]
-        session.inTransaction should be(false)
+        session.isInTransaction should be(false)
       }
 
     }
@@ -168,21 +169,24 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
 
   case class TestRow(id: Int, name: String)
 
-  // Schema contains fewer columns than TestTable definition below, to allow testing of queries for non-existent columns
-  class TestTableSchema extends Table[TestRow]("TEST") {
+  // Real schema, only including the real columns to create in the db
+  class TestTableRealSchema(tag: Tag) extends Table[TestRow](tag, "TEST") {
     def id = column[Int]("ID")
     def name = column[String]("NAME")
-    def * = id ~ name <> (TestRow, TestRow.unapply _)
+    def * = (id, name) <> (TestRow.tupled, TestRow.unapply)
   }
+  lazy val testRows = TableQuery[TestTableRealSchema]
 
-  class TestTable extends Table[TestRow]("TEST") {
+  // For testing, this table definition includes and extra column NOT in the db
+  class TestTableWithMissingColumn(tag: Tag) extends Table[TestRow](tag, "TEST") {
     def id = column[Int]("ID")
     def name = column[String]("NAME")
     def doesNotExist = column[String]("DOES_NOT_EXIST") // this NamedColumn will not be in SQL schema above
-    def * = id ~ name <> (TestRow, TestRow.unapply _)
+    def * = (id, name) <> (TestRow.tupled, TestRow.unapply)
   }
+  lazy val testRowsNoCol = TableQuery[TestTableWithMissingColumn]
 
-  type TestQueryCriterion = (TestTable) => Column[Boolean]
+  type TestQueryCriterion = (TestTableWithMissingColumn) => Column[Boolean]
 
   def testChunkedEnumerationUsingInMemoryDb(rowsInDb: List[TestRow],
                                             maybeChunkSize: Option[Int],
@@ -191,27 +195,27 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
                                             criteria: Seq[TestQueryCriterion] = Nil,
                                             maybeExtraEnumeratee: Option[Enumeratee[List[TestRow], List[TestRow]]] = None,
                                             maybeExternalSession: Option[SessionWithAsyncTransaction] = None,
-                                            maybeExtendedProfile: Option[ExtendedProfile] = None,
+                                            maybeDriverProfile: Option[JdbcProfile] = None,
                                             logCallback: LogCallback = _ => ()) {
     // Create table if not exist, and insert rows
-    val testTable = new TestTable
-    db withSession {
-      val schema = new TestTableSchema
-      try { schema.ddl.drop }
+    db withSession { implicit session =>
+      try {
+        testRows.ddl.drop
+      }
       catch { case ex: JdbcSQLException if ex.getMessage.contains("Table \"TEST\" not found") => /* ignore */ }
-      schema.ddl.create
-      schema.insertAll(rowsInDb:_*)
+      testRows.ddl.create
+      testRows.insertAll(rowsInDb:_*)
     }
 
     // Query the table
-    val baseQuery = for { test <- testTable } yield test
+    val baseQuery = for { test <- testRowsNoCol } yield test
     baseQuery.selectStatement
     def mkQuery(criteria: TestQueryCriterion*) = criteria.foldLeft(baseQuery) { (q, c) => q.filter(c) }
 
     // Enumerate in chunks, through an Enumeratee which records each chunk as an effect, and an
     //   optional extra Enumeratee passed in by the caller, into a consuming Iteratee
     val sessionOrDatabase = maybeExternalSession.toLeft(db)
-    val driver = maybeExtendedProfile.getOrElse(tdb.driver)
+    val driver = maybeDriverProfile.getOrElse(tdb.driver)
     val enumerator = enumerateScalaQuery(driver, sessionOrDatabase, mkQuery(criteria:_*), maybeChunkSize, logCallback)
 
     var chunksSent: List[List[TestRow]] = Nil
@@ -247,7 +251,9 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
     }
 
     def addNewRow() {
-      db withSession { new TestTableSchema().insert(TestRow(Random.nextInt(), Random.alphanumeric.take(5).mkString)) }
+      db withSession { implicit session =>
+        testRows.insert(TestRow(Random.nextInt(), Random.alphanumeric.take(5).mkString))
+      }
     }
 
     // return an enumeratee which calls the above function on each chunk
@@ -299,8 +305,8 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
       }
 
       val maybeExtendedProfile = scenario match {
-        case ThrowInSqlGen => Some(new H2Driver {
-          override def createQueryBuilder(input: QueryBuilderInput): QueryBuilder = { throw new TestSqlGenException() }
+        case ThrowInSqlGen => Some(new scala.slick.driver.H2Driver {
+          override def createQueryBuilder(n: scala.slick.ast.Node, state: scala.slick.compiler.CompilerState): QueryBuilder = { throw new TestSqlGenException() }
         })
         case _ => None
       }
@@ -308,11 +314,16 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
       testChunkedEnumerationUsingInMemoryDb(
         fiveRowsInDb, Some(2), fiveRowsInDb.grouped(2).toList,
         criteria = criteria,
-        maybeExtendedProfile = maybeExtendedProfile,
+        maybeDriverProfile = maybeExtendedProfile,
         logCallback = f => { promisedLogged.trySuccess(f) })
     }
 
     Await.result(promisedLogged.future, 5 seconds)
+  }
+
+  class SessionWithAsyncTransactionForTesting extends SessionWithAsyncTransaction(db) {
+    /** Expose for test assertions. Slick made this protected in 2.0.0 */
+    def isInTransaction = inTransaction
   }
 
   class TestSqlGenException extends RuntimeException

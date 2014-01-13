@@ -1,4 +1,4 @@
-package scala.slick.session
+package scala.slick.jdbc
 
 /** Reimplementation of the transaction semantics of Slick's BaseSession#withTransaction,
   * but in an API which can be driven from multiple asynchronous callbacks rather than only a
@@ -6,7 +6,7 @@ package scala.slick.session
   *
   * NOTE: Used by ScalaQueryPlayIteratees to provide read consistency across chunked reads.
   */
-class SessionWithAsyncTransaction(db: Database) extends BaseSession(db) {
+class SessionWithAsyncTransaction(db: JdbcBackend#Database) extends JdbcBackend.BaseSession(db.asInstanceOf[JdbcBackend.Database]) {
   var hasTransactionFailed = false // don't allow asynchronously re-opening after a failed transaction
 
   /** Execute the given block with an active async transaction
@@ -15,7 +15,7 @@ class SessionWithAsyncTransaction(db: Database) extends BaseSession(db) {
     *   1. The open transaction will be rolled back
     *   2. Further calls are not allowed, throwing IllegalStateException, create a new Session instead
     */
-  def withAsyncTransaction[T](f: Session => T): T = {
+  def withAsyncTransaction[T](f: JdbcBackend#Session => T): T = {
     ensureAsyncTransactionIsStarted()
 
     var doneWithThisBlock = false

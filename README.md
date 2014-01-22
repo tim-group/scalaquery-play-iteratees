@@ -1,6 +1,6 @@
 ScalaQueryPlayIteratees
 =======================
-[![Build Status](https://travis-ci.org/youdevise/scalaquery-play-iteratees.png)](https://travis-ci.org/youdevise/scalaquery-play-iteratees)
+[![Build Status](https://travis-ci.org/youdevise/scalaquery-play-iteratees.png?branch=0.9.x)](https://travis-ci.org/youdevise/scalaquery-play-iteratees)
 
 **NOTE**: This is branch **0.9.x**, for use with _Play 2.0.x_ and _ScalaQuery 0.10.0-M1_ on Scala language _2.9.x_.
 

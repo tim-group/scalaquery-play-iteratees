@@ -16,7 +16,7 @@ resolvers += "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play" % playVersion.value intransitive(),
   "com.typesafe.play" %% "play-iteratees" % playVersion.value intransitive(),
-  "com.typesafe.slick" %% "slick" % "2.0.0-RC1" intransitive(),
+  "com.typesafe.slick" %% "slick" % "2.0.0" intransitive(),
   "com.h2database" % "h2" % "1.3.166" intransitive(),
   "joda-time" % "joda-time" % "2.3" intransitive(),
   "org.joda" % "joda-convert" % "1.5" intransitive(),
@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
   // Test-only dependencies
   "org.scalatest" %% "scalatest" % "2.0" % "test",
   "org.mockito" % "mockito-core" % "1.9.0" % "test",
-  "com.typesafe.slick" %% "slick-testkit" % "2.0.0-RC1" % "test",
+  "com.typesafe.slick" %% "slick-testkit" % "2.0.0" % "test",
   "ch.qos.logback" % "logback-classic" % "1.0.13" % "test"
 )
 

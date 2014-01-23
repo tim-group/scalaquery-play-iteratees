@@ -10,25 +10,25 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import models._
 
 object Application extends Controller {
-  implicit val recordsWrites = traversableWrites(Records.RecordWrites)
+  implicit val recordsWrites = traversableWrites(records.RecordWrites)
 
   def index = Action { request =>
     Ok(views.html.index())
   }
 
   def list = Action { request =>
-    Records.ensureDbPopulated()
-    Ok(toJson(Records.all))
+    records.ensureDbPopulated()
+    Ok(toJson(records.all))
   }
 
   def listComet = Action { request =>
-    Records.ensureDbPopulated()
+    records.ensureDbPopulated()
 
     // Records fetched in chunks of 2, and asynchronously piped out to
     // browser in chunked http responses, to be handled by comet callback.
     //
     // see http://www.playframework.com/documentation/2.2.x/ScalaComet
-    val pipeline = Records.enumerateAllInChunksOfTwo &>
+    val pipeline = records.enumerateAllInChunksOfTwo &>
       Enumeratee.map(toJson(_)) &>
       Comet(callback = "parent.cometMessage")
 

@@ -9,27 +9,26 @@ import play.api.Play.current
 
 import scala.slick.driver.H2Driver
 import scala.slick.driver.H2Driver.simple._
-import scala.slick.session.Database
-import scala.slick.session.Database.threadLocalSession
 
 import com.timgroup.scalaquery_play_iteratees.ScalaQueryPlayIteratees.{enumerateScalaQuery, PlayLogCallback}
 
 case class Record(id: Int, name: String)
 
-class Records extends Table[Record]("records") {
+class Records(tag: Tag) extends Table[Record](tag, "records") {
+  def id   = column[Int   ]("id")
+  def name = column[String]("name")
+  def * = (id, name) <> (Record.tupled, Record.unapply)
+}
+
+object records extends TableQuery(new Records(_)) {
   def database = Database.forDataSource(DB.getDataSource("default"))
   lazy val profile = H2Driver
 
-  // mapped columns
-  def id   = column[Int   ]("id")
-  def name = column[String]("name")
-  def * = id ~ name <> (Record, Record.unapply _)
-
   def mkQuery = for { r <- this } yield r
 
-  def count = database withSession { Query(mkQuery.length).first }
+  def count = database withSession { implicit s => mkQuery.length.run }
 
-  def all = database withSession { mkQuery.list }
+  def all = database withSession { implicit s => mkQuery.list }
 
   /** This is it: enumerate the query for all Records in chunks of 2 */
   def enumerateAllInChunksOfTwo = enumerateScalaQuery(profile, Right(database), mkQuery, maybeChunkSize = Some(2),
@@ -43,7 +42,7 @@ class Records extends Table[Record]("records") {
         Record(3, "Gamma"),
         Record(4, "Delta"),
         Record(5, "Epsilon"))
-      database withSession { this.insertAll(records:_*) }
+      database withSession { implicit s => this.insertAll(records:_*) }
     }
   }
 
@@ -53,5 +52,3 @@ class Records extends Table[Record]("records") {
   }
 
 }
-
-object Records extends Records

@@ -8,8 +8,7 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     jdbc,
-    "com.typesafe.slick" %% "slick" % "1.0.1",
-    "com.typesafe.play" %% "play-slick" % "0.5.0.8"
+    "com.typesafe.slick" %% "slick" % "2.0.0-RC1"
   )
 
   // Depend on the latest local code of the play module we're testing

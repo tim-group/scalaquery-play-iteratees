@@ -45,7 +45,7 @@ def listRecordsViaComet = Action { request =>
 //
 // Model
 //
-class Records extends Table[Record]("records") {
+object records extends TableQuery(new Records(_)) {
   def mkQuery = for { r <- this } yield r
   
   def enumerateAllInChunksOfTwo = 

@@ -59,7 +59,9 @@ See the included [sample play app](sample) for a working example.
 Adding SBT Dependency
 ---------------------
 
-##### Scala 2.10.x + Play 2.2.x + Slick 2.0.0-RC1: #####
+##### Scala 2.10.x + Play 2.2.x + Slick 2.0.0: #####
+
+The latest published release is **[1.1.0](http://oss.sonatype.org/content/repositories/releases/com/timgroup/scalaquery-play-iteratees_2.10/1.1.0/)**. Add dependency to **project/Build.scala** as: `"com.timgroup" %% "scalaquery-play-iteratees" % "1.1.0"`
 
 Coming soon! Please comment on [this ticket](https://github.com/freekh/play-slick/issues/115) if you'd like to help.
 

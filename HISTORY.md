@@ -1,5 +1,9 @@
 # HISTORY
 
+## [v1.1.0 (Jan 24, 2014)](http://github.com/youdevise/scalaquery-play-iteratees/compare/v1.0.0-M1...v1.1.0)
+
+  - first release supporting Slick 2.0.x
+
 ## [v1.0.0-M1 (Dec 17, 2013)](http://github.com/youdevise/scalaquery-play-iteratees/compare/v0.9.1...v1.0.0-M1)
 
   - first release supporting Slick 1.0.x

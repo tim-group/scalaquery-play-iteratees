@@ -70,7 +70,7 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with MustMatche
       it("should close underlying jdbc connection after successful execution") {
         val session = new SessionWithAsyncTransaction(db)
         testChunkedEnumerationUsingInMemoryDb(fiveRowsInDb, None, List(fiveRowsInDb), maybeExternalSession = Some(session))
-        session.conn.isClosed must be(true)
+        session.open must be(false)
       }
 
     }

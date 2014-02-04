@@ -7,6 +7,7 @@ package scala.slick.session
   * NOTE: Used by ScalaQueryPlayIteratees to provide read consistency across chunked reads.
   */
 class SessionWithAsyncTransaction(db: Database) extends BaseSession(db) {
+  conn                             // force instantiation of lazy val so we can assume it starts open
   var hasTransactionFailed = false // don't allow asynchronously re-opening after a failed transaction
 
   /** Execute the given block with an active async transaction
@@ -58,6 +59,8 @@ class SessionWithAsyncTransaction(db: Database) extends BaseSession(db) {
     } finally {
       conn.setAutoCommit(true)
       inTransaction = false
+      close()
+      open = false
     }
   }
 

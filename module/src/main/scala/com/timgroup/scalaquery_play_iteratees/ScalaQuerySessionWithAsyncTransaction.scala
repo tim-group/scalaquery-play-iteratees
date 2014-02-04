@@ -60,6 +60,8 @@ class SessionWithAsyncTransaction(db: Database) extends BaseSession(db) {
     } finally {
       conn.setAutoCommit(true)
       inTransaction = false
+      close()
+      open = false
     }
   }
 

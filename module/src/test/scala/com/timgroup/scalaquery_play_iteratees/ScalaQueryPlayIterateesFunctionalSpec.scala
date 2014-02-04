@@ -71,6 +71,12 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
         session.isInTransaction should be(false)
       }
 
+      it("should close underlying jdbc connection after successful execution") {
+        val session = new SessionWithAsyncTransaction(db)
+        testChunkedEnumerationUsingInMemoryDb(fiveRowsInDb, None, List(fiveRowsInDb), maybeExternalSession = Some(session))
+        session.isOpen should be(false)
+      }
+
     }
 
     describe("Error handling") {
@@ -92,6 +98,13 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
         session.isInTransaction should be(false)
       }
 
+      it("should close underlying jdbc connection when exception generated during query execution") {
+        val session = new SessionWithAsyncTransaction(db)
+        val criterion: TestQueryCriterion = (_.doesNotExist isNotNull)
+        evaluating { testChunkedEnumerationUsingInMemoryDb(Nil, None, Nil, criteria = Seq(criterion), maybeExternalSession = Some(session)) } should produce [JdbcSQLException]
+        session.isOpen should be(false)
+      }
+
       it("should close transaction when exception generated in downstream Enumeratee") {
         val session = new SessionWithAsyncTransactionForTesting
         val exceptionThrowingEnumeratee = Enumeratee.map { chunk: List[TestRow] => throw new RuntimeException("boo!"); chunk }
@@ -101,6 +114,17 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
             maybeExternalSession = Some(session))
         } should produce [RuntimeException]
         session.isInTransaction should be(false)
+      }
+
+      it("should close underlying jdbc connection when exception generated in downstream Enumeratee") {
+        val session = new SessionWithAsyncTransaction(db)
+        val exceptionThrowingEnumeratee = Enumeratee.map { chunk: List[TestRow] => throw new RuntimeException("boo!"); chunk }
+        evaluating {
+          testChunkedEnumerationUsingInMemoryDb(fiveRowsInDb, Some(2), rowsInDbExcludingC.grouped(2).toList,
+            maybeExtraEnumeratee = Some(exceptionThrowingEnumeratee),
+            maybeExternalSession = Some(session))
+        } should produce [RuntimeException]
+        session.isOpen should be(false)
       }
 
       it("should close transaction when downstream Enumeratee is in Error state") {
@@ -114,6 +138,19 @@ class ScalaQueryPlayIterateesFunctionalSpec extends path.FunSpec with Matchers {
             maybeExternalSession = Some(session))
         } should produce [RuntimeException]
         session.isInTransaction should be(false)
+      }
+
+      it("should close underlying jdbc connection when downstream Enumeratee is in Error state") {
+        val session = new SessionWithAsyncTransaction(db)
+        val errorStateEnumeratee = new Enumeratee[List[TestRow], List[TestRow]] {
+          def applyOn[A](inner: Iteratee[List[TestRow], A]) = Error("testing!", Input.Empty)
+        }
+        evaluating {
+          testChunkedEnumerationUsingInMemoryDb(fiveRowsInDb, Some(2), rowsInDbExcludingC.grouped(2).toList,
+            maybeExtraEnumeratee = Some(errorStateEnumeratee),
+            maybeExternalSession = Some(session))
+        } should produce [RuntimeException]
+        session.isOpen should be(false)
       }
 
     }

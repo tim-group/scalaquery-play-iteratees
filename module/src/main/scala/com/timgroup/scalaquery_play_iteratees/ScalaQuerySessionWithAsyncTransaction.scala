@@ -58,7 +58,14 @@ class SessionWithAsyncTransaction(db: JdbcBackend#Database) extends JdbcBackend.
     } finally {
       conn.setAutoCommit(true)
       inTransaction = false
+      close()
+      open = false
     }
+  }
+
+  def isOpen: Boolean = {
+    conn // force instantiation of lazy val so we can assume it starts open
+    open
   }
 
 }

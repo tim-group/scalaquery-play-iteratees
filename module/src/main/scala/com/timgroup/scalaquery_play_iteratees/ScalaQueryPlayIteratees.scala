@@ -138,16 +138,20 @@ object ScalaQueryPlayIteratees {
 
     /** Third place that an exception might occur: executing the query */
     private def executeQuery(maybeQueryWithChunking: Option[Query[Q, R]]) = Future {
-      val results: List[R] = session.withAsyncTransaction { implicit sessionWithTransaction =>
-        maybeQueryWithChunking match {
-          case Some(query) => query.list
-          case None        => Nil
+      if (session.isOpen) {
+        val results: List[R] = session.withAsyncTransaction { implicit sessionWithTransaction =>
+          maybeQueryWithChunking match {
+            case Some(query) => query.list
+            case None        => Nil
+          }
         }
+
+        position += results.size // update mutable counter based on count of results fetched
+
+        Some(results).filterNot(_.isEmpty) // return Future.successful(None) if no results
+      } else {
+        None
       }
-
-      position += results.size // update mutable counter based on count of results fetched
-
-      Some(results).filterNot(_.isEmpty) // return Future.successful(None) if no results
     }
 
     /** Asynchronously log success or failure as soon as they are available */

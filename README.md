@@ -1,3 +1,9 @@
+Superceded
+==========
+This project has been merged into [play-slick](https://github.com/freekh/play-slick) in this [pull request](https://github.com/freekh/play-slick/pull/135).
+
+Therefore, if you are using the current versions of Play and Slick, please head over to the [play-slick](https://github.com/freekh/play-slick), which supercedes this one.
+
 ScalaQueryPlayIteratees
 =======================
 [![Build Status](https://travis-ci.org/youdevise/scalaquery-play-iteratees.png)](https://travis-ci.org/youdevise/scalaquery-play-iteratees)

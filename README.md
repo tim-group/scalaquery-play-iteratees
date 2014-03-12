@@ -26,7 +26,7 @@ There is work going on now to merge this library into the [play-slick](https://g
 Summary
 -------
 Easily create a Play 2.2.x [Enumerator](http://www.playframework.com/documentation/2.2.x/Enumerators)
-producing chunked results from any [Slick 1.0.x](https://github.com/slick/slick/tree/1.0) query!
+producing chunked results from any [Slick 2.0.x](https://github.com/slick/slick) query!
  *  Stream chunked results from any `Query` as an `Enumerator`! 
  *  Easily plug into Play 2.2.x streaming, such as
     [Comet](http://www.playframework.com/documentation/2.2.x/ScalaComet)
